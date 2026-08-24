@@ -356,6 +356,7 @@ const MSG_TYPES=["onsite_conversion.messaging_conversation_started_7d","messagin
 const purchases=a=>Math.max(actVal(a,"omni_purchase"), actVal(a,"purchase"), actVal(a,"offsite_conversion.fb_pixel_purchase"));
 const messages=a=>Math.max(...MSG_TYPES.map(t=>actVal(a,t)),0);
 function cpa(spend, act){ const p=purchases(act)||messages(act); return p>0? spend/p : null; }
+function purchaseValue(av){ const v=(av||[]).find(x=>PURCHASE_TYPES.includes(x.action_type)); return v?+v.value:0; }
 </script>
 <script>
 /* ---------- Signal lights ---------- */
@@ -601,14 +602,23 @@ PAGES.dashboard = async function(){
       </div>
     </div>
     <div class="grid g6" id="kpis">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(6)}</div>
+    <h3 class="mt" style="letter-spacing:1px">🛒 ยอดขาย</h3>
+    <div class="grid g4 mb" id="kpis2">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(4)}</div>
+    <div class="grid g3" id="kpis3">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(3)}</div>
     <div class="grid g2 mt">
       <div class="card"><h3>💸 SPEND PER CAMPAIGN</h3><div class="chartbox"><canvas id="chSpend"></canvas></div></div>
       <div class="card"><h3>👆 CLICKS &amp; REACH PER CAMPAIGN</h3><div class="chartbox"><canvas id="chCR"></canvas></div></div>
-    </div>`;
-  const [cur, prv, camps] = await Promise.all([
+    </div>
+    <div class="grid g2 mt">
+      <div class="card"><h3>💬 TOP CAMPAIGNS (ทักแชทมากสุด)</h3><div class="chartbox"><canvas id="chTopMsg"></canvas></div></div>
+      <div class="card"><h3>💰 TOP CAMPAIGNS (ยอดขายมากสุด)</h3><div class="chartbox"><canvas id="chTopRev"></canvas></div></div>
+    </div>
+    <div class="card mt"><h3>📈 ยอดขายรายวัน (DAILY SALES PERFORMANCE)</h3><div class="chartbox"><canvas id="chDaily"></canvas></div></div>`;
+  const [cur, prv, camps, daily] = await Promise.all([
     accountInsights(range,{},"acc_"+S.preset),
     accountInsights(prev,{},"accprev_"+S.preset),
-    levelInsights("campaign",range,"camp_"+S.preset)
+    levelInsights("campaign",range,"camp_"+S.preset),
+    mGETAll(`/${S.act}/insights`,{fields:"spend,actions,action_values,date_start",time_range:range,level:"account",time_increment:1,action_breakdowns:"action_type"},"daily_"+S.preset)
   ]);
   $("syncTime").textContent="ซิงค์เมื่อ "+new Date().toLocaleTimeString("th-TH");
   const K=[
@@ -620,6 +630,28 @@ PAGES.dashboard = async function(){
     {l:"CPM",v:fmtB(cur.cpm),c:chgHTML(cur.cpm,prv.cpm,true)},
   ];
   $("kpis").innerHTML=K.map(k=>`<div class="kpi"><div class="lbl">${k.l}</div><div class="val">${k.v}</div><div>${k.c} <span class="muted small">vs ช่วงก่อน</span></div></div>`).join("");
+
+  const curPur=purchases(cur.actions), prvPur=purchases(prv.actions);
+  const curMsg=messages(cur.actions), prvMsg=messages(prv.actions);
+  const curRev=purchaseValue(cur.action_values), prvRev=purchaseValue(prv.action_values);
+  const curCPP=curPur>0?(+cur.spend)/curPur:null, prvCPP=prvPur>0?(+prv.spend)/prvPur:null;
+  const curAOV=curPur>0?curRev/curPur:null, prvAOV=prvPur>0?prvRev/prvPur:null;
+  const curROAS=(+cur.spend)>0?curRev/(+cur.spend):null, prvROAS=(+prv.spend)>0?prvRev/(+prv.spend):null;
+  const curClose=curMsg>0?curPur/curMsg*100:null, prvClose=prvMsg>0?prvPur/prvMsg*100:null;
+  const K2=[
+    {l:"MESSAGING STARTED",v:fmtN(curMsg),c:chgHTML(curMsg,prvMsg)},
+    {l:"PURCHASES",v:fmtN(curPur),c:chgHTML(curPur,prvPur)},
+    {l:"PURCHASES VALUE",v:fmtB(curRev),c:chgHTML(curRev,prvRev)},
+    {l:"CLOSING RATE",v:curClose!==null?fmtP(curClose):"—",c:chgHTML(curClose,prvClose)},
+  ];
+  const K3=[
+    {l:"COST / PURCHASE",v:curCPP!==null?fmtB(curCPP):"—",c:chgHTML(curCPP,prvCPP,true)},
+    {l:"AVERAGE ORDER VALUE",v:curAOV!==null?fmtB(curAOV):"—",c:chgHTML(curAOV,prvAOV)},
+    {l:"PURCHASES ROAS",v:curROAS!==null?curROAS.toFixed(2)+"x":"—",c:chgHTML(curROAS,prvROAS)},
+  ];
+  $("kpis2").innerHTML=K2.map(k=>`<div class="kpi"><div class="lbl">${k.l}</div><div class="val">${k.v}</div><div>${k.c} <span class="muted small">vs ช่วงก่อน</span></div></div>`).join("");
+  $("kpis3").innerHTML=K3.map(k=>`<div class="kpi"><div class="lbl">${k.l}</div><div class="val">${k.v}</div><div>${k.c} <span class="muted small">vs ช่วงก่อน</span></div></div>`).join("");
+
   const top=camps.slice().sort((a,b)=>b.spend-a.spend).slice(0,10);
   const names=top.map(c=>c.campaign_name.length>22?c.campaign_name.slice(0,22)+"…":c.campaign_name);
   mkChart("chSpend",{type:"bar",data:{labels:names,datasets:[{label:"Spend (฿)",data:top.map(c=>+c.spend),backgroundColor:"rgba(255,201,60,.7)",borderColor:"#FFC93C",borderWidth:1,borderRadius:6}]},
@@ -628,6 +660,28 @@ PAGES.dashboard = async function(){
       {label:"Clicks",data:top.map(c=>+c.clicks),backgroundColor:"rgba(200,30,58,.7)",borderRadius:6},
       {label:"Reach",data:top.map(c=>+c.reach),backgroundColor:"rgba(46,204,113,.55)",borderRadius:6}]},
     options:{maintainAspectRatio:false}});
+
+  const shortName=n=>n&&n.length>22?n.slice(0,22)+"…":(n||"");
+  const topMsg=camps.map(c=>({name:c.campaign_name,val:messages(c.actions)})).filter(c=>c.val>0).sort((a,b)=>b.val-a.val).slice(0,6);
+  const topRev=camps.map(c=>({name:c.campaign_name,val:purchaseValue(c.action_values)})).filter(c=>c.val>0).sort((a,b)=>b.val-a.val).slice(0,6);
+  mkChart("chTopMsg",{type:"bar",data:{labels:topMsg.map(c=>shortName(c.name)),datasets:[{label:"เริ่มทักแชท",data:topMsg.map(c=>c.val),backgroundColor:"rgba(74,144,217,.75)",borderRadius:6}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},indexAxis:"y"}});
+  mkChart("chTopRev",{type:"bar",data:{labels:topRev.map(c=>shortName(c.name)),datasets:[{label:"ยอดขาย (฿)",data:topRev.map(c=>c.val),backgroundColor:"rgba(46,204,113,.75)",borderRadius:6}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},indexAxis:"y"}});
+
+  const dailySorted=daily.slice().sort((a,b)=>a.date_start<b.date_start?-1:1);
+  const dayLabels=dailySorted.map(d=>{const dt=new Date(d.date_start+"T00:00:00"); return dt.getDate()+"/"+(dt.getMonth()+1);});
+  const dailyPur=dailySorted.map(d=>purchases(d.actions));
+  const dailyRev=dailySorted.map(d=>purchaseValue(d.action_values));
+  mkChart("chDaily",{type:"bar",data:{labels:dayLabels,datasets:[
+      {type:"line",label:"มูลค่าซื้อ (฿)",data:dailyRev,borderColor:"#4A90D9",backgroundColor:"rgba(74,144,217,.15)",yAxisID:"y1",tension:.3,pointRadius:3,fill:true},
+      {label:"จำนวนซื้อ",data:dailyPur,backgroundColor:"rgba(255,201,60,.75)",borderRadius:4,yAxisID:"y"}]},
+    options:{maintainAspectRatio:false,
+      scales:{
+        y:{position:"left",ticks:{precision:0},title:{display:true,text:"จำนวนซื้อ"}},
+        y1:{position:"right",grid:{drawOnChartArea:false},title:{display:true,text:"มูลค่า (฿)"}}
+      }}});
+
   clearInterval(window._dashTimer);
   window._dashTimer=setInterval(()=>{ if(S.page==="dashboard"){ S.cache={}; PAGES.dashboard(); } },60000);
 };
@@ -1162,10 +1216,14 @@ PAGES.audience = async function(){
       <div class="card"><h3>🏆 WINNING AUDIENCES</h3><div id="audWin"></div></div>
       <div class="card"><h3>💸 LOSING AUDIENCES</h3><div id="audLose"></div></div>
     </div>
+    <div class="grid g2 mt">
+      <div class="card tablewrap"><h3>🛍 PURCHASES ตามช่วงอายุ</h3><div id="audPurAge"></div></div>
+      <div class="card tablewrap"><h3>🛍 PURCHASES ตามเพศ</h3><div id="audPurGen"></div></div>
+    </div>
     <div id="audAiOut" class="mt"></div>`;
   const range=presetRange(S.preset);
   const [ag, dev]=await Promise.all([
-    mGETAll(`/${S.act}/insights`,{fields:"spend,impressions,clicks,ctr,actions",time_range:range,level:"account",breakdowns:"age,gender",action_breakdowns:"action_type"},"aud_ag_"+S.preset),
+    mGETAll(`/${S.act}/insights`,{fields:"spend,impressions,clicks,ctr,actions,action_values",time_range:range,level:"account",breakdowns:"age,gender",action_breakdowns:"action_type"},"aud_ag_"+S.preset),
     mGETAll(`/${S.act}/insights`,{fields:"impressions,spend",time_range:range,level:"account",breakdowns:"impression_device"},"aud_dev_"+S.preset)
   ]);
   window._audAG=ag;
@@ -1182,6 +1240,25 @@ PAGES.audience = async function(){
   const li=s=>`<div class="row spread" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)"><span>${esc(s.label)}</span><span class="small">CPA ${fmtB(s.cpa)} • CTR ${fmtP(s.ctr)} • ผลลัพธ์ ${s.res}</span></div>`;
   $("audWin").innerHTML=scored.slice(0,5).map(li).join("")||'<div class="empty small">ไม่มีข้อมูล conversion</div>';
   $("audLose").innerHTML=scored.slice(-5).reverse().map(li).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
+
+  const byAgePur={}, byGenPur={};
+  ag.forEach(r=>{
+    const pur=purchases(r.actions), rev=purchaseValue(r.action_values);
+    if(!byAgePur[r.age]) byAgePur[r.age]={pur:0,rev:0};
+    byAgePur[r.age].pur+=pur; byAgePur[r.age].rev+=rev;
+    const g=r.gender==="male"?"ชาย":(r.gender==="female"?"หญิง":"ไม่ระบุ");
+    if(!byGenPur[g]) byGenPur[g]={pur:0,rev:0};
+    byGenPur[g].pur+=pur; byGenPur[g].rev+=rev;
+  });
+  const purTable=obj=>{
+    const rows=Object.entries(obj).filter(([,v])=>v.pur>0||v.rev>0).sort((a,b)=>b[1].rev-a[1].rev);
+    if(!rows.length) return '<div class="empty small">ไม่มีข้อมูล purchase</div>';
+    return `<table><thead><tr><th>กลุ่ม</th><th class="num">Purchases</th><th class="num">Purchases Value</th></tr></thead><tbody>
+      ${rows.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${fmtN(v.pur)}</td><td class="num">${fmtB(v.rev)}</td></tr>`).join("")}
+      </tbody></table>`;
+  };
+  $("audPurAge").innerHTML=purTable(byAgePur);
+  $("audPurGen").innerHTML=purTable(byGenPur);
 };
 async function audAI(){
   $("audAiOut").innerHTML='<div class="card"><span class="spin"></span></div>';
