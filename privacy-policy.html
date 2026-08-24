@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>นโยบายความเป็นส่วนตัว — Knock Ads</title>
+<style>
+  body{font-family:'Segoe UI',Tahoma,sans-serif;max-width:760px;margin:0 auto;padding:40px 20px;line-height:1.7;color:#191410;background:#FBF6EC}
+  h1{color:#191410;border-bottom:3px solid #FFC93C;padding-bottom:12px}
+  h2{color:#C81E3A;margin-top:32px}
+  .meta{color:#6B5F52;font-size:14px;margin-bottom:24px}
+  .box{background:#FFFDF8;border:1px solid #E8DFCC;border-radius:10px;padding:20px;margin:16px 0}
+  a{color:#C81E3A}
+</style>
+</head>
+<body>
+<h1>🥊 นโยบายความเป็นส่วนตัว — Knock Ads</h1>
+<div class="meta">จัดทำโดย Knock Out • ปรับปรุงล่าสุด: สิงหาคม 2569</div>
+
+<div class="box">
+<strong>สรุปสั้นๆ:</strong> Knock Ads เป็นเครื่องมือที่ทำงาน "ในเครื่องของคุณ" ทั้งหมด ไม่มีเซิร์ฟเวอร์กลางของ Knock Out เก็บข้อมูลของคุณเลย — Token, Account ID และ API Key ทุกตัวถูกเก็บไว้ใน localStorage ของเบราว์เซอร์บนอุปกรณ์ที่คุณใช้งานเท่านั้น
+</div>
+
+<h2>1. ข้อมูลที่เก็บและเก็บไว้ที่ไหน</h2>
+<p>Knock Ads เก็บข้อมูลต่อไปนี้ไว้ใน <strong>localStorage ของเบราว์เซอร์ (ในเครื่องคุณเท่านั้น)</strong>:</p>
+<ul>
+  <li>Meta Access Token และ Ad Account ID</li>
+  <li>Anthropic API Key และ OpenAI API Key (ถ้าใส่ไว้)</li>
+  <li>การตั้งค่า LINE แจ้งเตือน (ถ้าใส่ไว้)</li>
+  <li>ประวัติการใช้งาน/รายงาน/กฎอัตโนมัติที่คุณสร้างในแอป</li>
+</ul>
+<p>ข้อมูลเหล่านี้ <strong>ไม่ถูกส่งไปเก็บที่เซิร์ฟเวอร์ของ Knock Out หรือบุคคลที่สามใดๆ</strong> เพราะแอปนี้ไม่มีเซิร์ฟเวอร์ backend — เป็นไฟล์ที่ทำงานอยู่ในเบราว์เซอร์ของคุณล้วนๆ</p>
+
+<h2>2. ใครเข้าถึงข้อมูลนี้ได้บ้าง</h2>
+<p>เฉพาะคุณเท่านั้น บนอุปกรณ์ที่คุณเปิดใช้งานแอป ถ้าคุณล้างข้อมูลเบราว์เซอร์ (Clear browsing data) หรือกดปุ่ม "ลบออกจากเครื่อง" ในแอป ข้อมูลจะถูกลบทันที และ Knock Out ไม่มีสำเนาเก็บไว้ที่อื่น</p>
+
+<h2>3. การเชื่อมต่อกับบริการภายนอก</h2>
+<p>เมื่อคุณใช้งานแอป เบราว์เซอร์ของคุณจะเชื่อมต่อ "โดยตรง" (ไม่ผ่าน Knock Out) ไปยัง:</p>
+<ul>
+  <li><strong>Meta Graph API</strong> (graph.facebook.com) — เพื่อดึง/จัดการข้อมูลโฆษณาของบัญชีที่คุณเชื่อมต่อเอง</li>
+  <li><strong>Anthropic API</strong> — เฉพาะถ้าคุณใส่ Anthropic Key เพื่อใช้ฟีเจอร์ AI แนะนำ</li>
+  <li><strong>OpenAI API</strong> — เฉพาะถ้าคุณใส่ OpenAI Key เพื่อใช้ฟีเจอร์ Gen รูปภาพ</li>
+</ul>
+<p>การใช้งานบริการเหล่านี้อยู่ภายใต้นโยบายความเป็นส่วนตัวของแต่ละเจ้าของบริการนั้นๆ (Meta, Anthropic, OpenAI) แยกต่างหากจากนโยบายนี้</p>
+
+<h2>4. คุกกี้และการติดตาม</h2>
+<p>Knock Ads ไม่ใช้คุกกี้ ไม่มีระบบวิเคราะห์พฤติกรรมผู้ใช้ (analytics) และไม่มีการติดตามผู้ใช้ข้ามเว็บไซต์แต่อย่างใด</p>
+
+<h2>5. การลบข้อมูล</h2>
+<p>ดูวิธีลบข้อมูลของคุณทั้งหมดได้ที่หน้า <a href="./data-deletion.html">คำแนะนำการลบข้อมูล</a></p>
+
+<h2>6. ติดต่อเรา</h2>
+<p>มีคำถามเกี่ยวกับความเป็นส่วนตัว ติดต่อได้ที่: <a href="mailto:tanapat0038zaza@gmail.com">tanapat0038zaza@gmail.com</a></p>
+
+</body>
+</html>
