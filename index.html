@@ -209,6 +209,8 @@ const S = {
   oaiKey: LS.get("oaiKey",""),
   lineUrl: LS.get("lineUrl",""), lineKey: LS.get("lineKey",""),
   preset: LS.get("preset","last_7d"),
+  customSince: LS.get("customSince",""),
+  customUntil: LS.get("customUntil",""),
   page: "dashboard",
   cache: {},           // in-memory API cache per session
   drafts: LS.get("drafts",[]),
@@ -319,12 +321,21 @@ const PRESETS = {
   last_7d:{label:"7 วัน",days:7,off:1}, last_14d:{label:"14 วัน",days:14,off:1}, last_30d:{label:"30 วัน",days:30,off:1},
 };
 function presetRange(p){
+  if(p==="custom" && S.customSince && S.customUntil){
+    return S.customSince<=S.customUntil ? {since:S.customSince, until:S.customUntil} : {since:S.customUntil, until:S.customSince};
+  }
   const c=PRESETS[p]||PRESETS.last_7d, t=bkkToday();
   const until=addD(t,-c.off+(c.off===0?0:0)); const u = c.off===0? t : addD(t,-1);
   const s = addD(u,-(c.days-1));
   return {since:ymd(s), until:ymd(u)};
 }
 function prevRange(p){
+  if(p==="custom" && S.customSince && S.customUntil){
+    const cur=presetRange(p);
+    const days=Math.round((new Date(cur.until)-new Date(cur.since))/86400000)+1;
+    const u=addD(new Date(cur.since),-1), s=addD(u,-(days-1));
+    return {since:ymd(s), until:ymd(u)};
+  }
   const c=PRESETS[p]||PRESETS.last_7d, cur=presetRange(p);
   const u=addD(new Date(cur.since),-1), s=addD(u,-(c.days-1));
   return {since:ymd(s), until:ymd(u)};
@@ -543,8 +554,37 @@ function updateProfile(id){
     });
 }
 function presetSeg(cb){
-  return `<div class="seg">`+Object.entries(PRESETS).map(([k,v])=>
-    `<button class="${S.preset===k?"active":""}" onclick="S.preset='${k}';LS.set('preset','${k}');S.cache={};${cb}()">${v.label}</button>`).join("")+`</div>`;
+  const custom = S.preset==="custom";
+  let html = `<div class="seg">`+Object.entries(PRESETS).map(([k,v])=>
+    `<button class="${S.preset===k?"active":""}" onclick="S.preset='${k}';LS.set('preset','${k}');S.cache={};${cb}()">${v.label}</button>`).join("")
+    +`<button class="${custom?"active":""}" onclick="selectCustomPreset();${cb}()">🗓 กำหนดเอง</button>`
+    +`</div>`;
+  if(custom){
+    html += `<div class="row" style="align-items:center;gap:6px;flex-wrap:nowrap">
+      <input type="date" id="cRngFrom" value="${esc(S.customSince||"")}" onchange="S.customSince=this.value" style="width:150px">
+      <span class="muted small">ถึง</span>
+      <input type="date" id="cRngTo" value="${esc(S.customUntil||"")}" onchange="S.customUntil=this.value" style="width:150px">
+      <button class="btn primary" onclick="applyCustomRange('${cb}')">ตกลง</button>
+    </div>`;
+  }
+  return html;
+}
+function selectCustomPreset(){
+  if(S.preset!=="custom"){
+    const r=presetRange(S.preset);
+    if(!S.customSince) S.customSince=r.since;
+    if(!S.customUntil) S.customUntil=r.until;
+  }
+  S.preset="custom"; LS.set("preset","custom"); S.cache={};
+}
+function applyCustomRange(cb){
+  const from=$("cRngFrom")?$("cRngFrom").value:S.customSince;
+  const to=$("cRngTo")?$("cRngTo").value:S.customUntil;
+  if(!from||!to) return toast("เลือกวันที่ให้ครบทั้ง 2 ช่อง","warn");
+  S.customSince=from; S.customUntil=to;
+  LS.set("customSince",from); LS.set("customUntil",to);
+  S.cache={};
+  new Function(cb+"()")();
 }
 
 /* =====================================================================
