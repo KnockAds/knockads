@@ -220,7 +220,6 @@ const S = {
   costs: LS.get("costs",[]),
   profiles: LS.get("profiles",[]),
   activeProfileId: LS.get("activeProfileId",null),
-  metaAppId: LS.get("metaAppId",""),
   tokenHistory: LS.get("tokenHistory",[]),
   abHistory: LS.get("abHistory",[]),
 };
@@ -1518,20 +1517,9 @@ PAGES.token = async function(){
       </div>
       <div class="muted small mt">ต้องกรอกและกด "บันทึก" ใน META ACCESS TOKEN ด้านล่างก่อน ค่อยมาบันทึกเป็นบัญชีที่นี่ • 🔀 สลับไปใช้บัญชีนั้น • 🔄 เขียนทับ Token เดิมของบัญชีนั้นด้วยค่าล่าสุดที่กรอกไว้ (เช่น ตอน Token หมดอายุ) • ✕ ลบออกจากรายการ</div>
     </div>
-    <div class="card mb" style="border-color:var(--primary)"><h3>🔗 เชื่อมต่อไว (แนะนำ) <button class="btn sm" style="float:right" onclick="guideOpen('meta')">📖 คู่มือ</button></h3>
-      <div class="muted small mb">ไม่ต้องไปหา Ad Account ID เอง — เชื่อมครั้งเดียวแล้วระบบดึงรายชื่อบัญชีโฆษณาทั้งหมดที่เข้าถึงได้มาให้เลือก เหมาะมากถ้ามีหลายบัญชีในที่เดียว</div>
-      <label>Meta App ID <span class="muted small">(สร้างแอปฟรีที่ developers.facebook.com — ดู 📖 คู่มือ)</span></label>
-      <input id="metaAppIdInput" value="${esc(S.metaAppId)}" placeholder="เช่น 1234567890123456">
-      <div class="row mt">
-        <button class="btn primary" onclick="connectFacebookLogin()">🔵 เชื่อมต่อด้วย Facebook Login</button>
-        <button class="btn blue" onclick="fetchAdAccountsList()">📋 ดึงรายชื่อบัญชีจาก Token ด้านล่าง</button>
-      </div>
-      <div class="muted small mt">ปุ่มซ้าย: ล็อกอิน Facebook แล้วให้สิทธิ์ครั้งเดียว (ต้อง Host เป็น URL จริงเช่น GitHub Pages ใช้ไม่ได้ถ้าเปิดไฟล์จากเครื่อง) • ปุ่มขวา: ถ้ามี Token อยู่แล้ว (จากวิธี Graph API Explorer เดิม) วางในช่อง META ACCESS TOKEN ด้านล่างแล้วกดปุ่มนี้ได้เลย ไม่ต้อง Host ก็ได้</div>
-      <div id="faaBox" class="mt"><div class="muted small">ยังไม่ได้ดึงรายชื่อ — กดปุ่มด้านบนปุ่มใดปุ่มหนึ่งเพื่อเริ่ม</div></div>
-    </div>
     <div class="grid g2" style="align-items:start">
     <div>
-      <div class="card mb"><h3>🔑 META ACCESS TOKEN (แบบ Manual) <button class="btn sm" style="float:right" onclick="guideOpen('meta')">📖 คู่มือ</button></h3>
+      <div class="card mb"><h3>🔑 META ACCESS TOKEN <button class="btn sm" style="float:right" onclick="guideOpen('meta')">📖 คู่มือ</button></h3>
         <label>Long-lived User Access Token</label>
         <textarea id="tkVal" rows="3" placeholder="EAAxxxxxxx...">${esc(S.token)}</textarea>
         <label>Ad Account ID (act_XXXXXXXXX)</label><input id="tkAct" value="${esc(S.act)}" placeholder="act_123456789">
@@ -1570,102 +1558,6 @@ PAGES.token = async function(){
   </div>`;
 };
 function tkLog(action){ S.tokenHistory.unshift({at:Date.now(),action}); S.tokenHistory=S.tokenHistory.slice(0,30); LS.set("tokenHistory",S.tokenHistory); }
-/* ---------- เชื่อมต่อไว: Facebook Login (OAuth) + ดึงรายชื่อบัญชีอัตโนมัติ ---------- */
-function connectFacebookLogin(){
-  const appId=($("metaAppIdInput")?.value||"").trim();
-  if(!appId) return toast("กรอก Meta App ID ก่อน (ดูวิธีสร้างได้ที่ 📖 คู่มือ)","warn");
-  S.metaAppId=appId; LS.set("metaAppId",appId);
-  const redirect=location.origin+location.pathname;
-  if(location.protocol==="file:") return toast("ปุ่มนี้ใช้ไม่ได้ตอนเปิดไฟล์จากเครื่อง (file://) — ต้อง Host เป็น URL จริงก่อน เช่น GitHub Pages","warn",8000);
-  const scope="ads_management,ads_read,pages_read_engagement,pages_manage_ads,business_management";
-  const url="https://www.facebook.com/v19.0/dialog/oauth?client_id="+encodeURIComponent(appId)+"&redirect_uri="+encodeURIComponent(redirect)+"&scope="+encodeURIComponent(scope)+"&response_type=token&auth_type=rerequest";
-  location.href=url;
-}
-function checkOAuthRedirect(){
-  const h=location.hash;
-  if(h && h.includes("access_token=")){
-    const params=new URLSearchParams(h.slice(1));
-    const tok=params.get("access_token"), err=params.get("error_description")||params.get("error");
-    history.replaceState(null,"",location.pathname+location.search);
-    go("token");
-    if(tok){
-      setTimeout(()=>{
-        if($("tkVal")) $("tkVal").value=tok;
-        toast("✅ เชื่อมต่อ Facebook สำเร็จ! กำลังดึงรายชื่อบัญชีโฆษณา...","ok",6000);
-        fetchAdAccountsList();
-      },50);
-    } else if(err){
-      setTimeout(()=>toast("❌ เชื่อมต่อไม่สำเร็จ: "+esc(err),"err",8000),50);
-    }
-    return true;
-  }
-  return false;
-}
-let FAA={items:[],sel:new Set(),loading:false,token:""};
-function faaStatusLabel(s){
-  const m={1:"ใช้งานได้",2:"ปิดใช้งาน",3:"ค้างชำระ",7:"รอตรวจสอบ",8:"รอตัดยอด",9:"ผ่อนผัน",100:"รอปิด",101:"ปิดแล้ว"};
-  return m[s]||("รหัส "+s);
-}
-async function fetchAdAccountsList(){
-  const typed=$("tkVal")?$("tkVal").value.trim():"";
-  const tok=typed||S.token;
-  if(!tok) return toast("ใส่ Token ในช่อง META ACCESS TOKEN ด้านล่างก่อน (หรือกดเชื่อมต่อด้วย Facebook Login)","warn");
-  FAA.token=tok; FAA.loading=true; renderFAABox();
-  try{
-    const u=new URL(API+"/me/adaccounts");
-    u.searchParams.set("access_token",tok);
-    u.searchParams.set("fields","id,account_id,name,account_status,currency,business_name");
-    u.searchParams.set("limit","200");
-    let data=[], r=await fetch(u), j=await r.json();
-    if(j.error) throw new Error(parseMetaError(j));
-    data=data.concat(j.data||[]);
-    let n=1;
-    while(j.paging && j.paging.next && n<10){ const r2=await fetch(j.paging.next); j=await r2.json(); if(j.error) throw new Error(parseMetaError(j)); data=data.concat(j.data||[]); n++; }
-    FAA.items=data.map(a=>({...a, act:"act_"+String(a.account_id||a.id).replace("act_","")}));
-    FAA.sel=new Set(FAA.items.map(a=>a.act));
-    tkLog("ดึงรายชื่อบัญชีโฆษณา ("+FAA.items.length+" บัญชี)");
-    if(!FAA.items.length) toast("Token นี้ยังไม่พบบัญชีโฆษณาที่เข้าถึงได้","warn",6000);
-  }catch(e){ toast("❌ ดึงรายชื่อบัญชีไม่สำเร็จ: "+esc(e.message),"err",7000); FAA.items=[]; }
-  FAA.loading=false; renderFAABox();
-}
-function toggleFAASel(act){ if(FAA.sel.has(act)) FAA.sel.delete(act); else FAA.sel.add(act); renderFAABox(); }
-function renderFAABox(){
-  const el=$("faaBox"); if(!el) return;
-  if(FAA.loading){ el.innerHTML='<span class="spin"></span> กำลังดึงรายชื่อบัญชี...'; return; }
-  if(!FAA.items.length){ el.innerHTML='<div class="muted small">ยังไม่ได้ดึงรายชื่อ — กดปุ่มด้านบนปุ่มใดปุ่มหนึ่งเพื่อเริ่ม</div>'; return; }
-  el.innerHTML=`
-    <div class="muted small mb">พบ ${FAA.items.length} บัญชี — ติ๊กเลือกบัญชีที่ต้องการเพิ่มเป็นโปรไฟล์ (ตั้งชื่อให้อัตโนมัติตามชื่อบัญชีจริง)</div>
-    <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px">
-      ${FAA.items.map(a=>`
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer">
-          <input type="checkbox" ${FAA.sel.has(a.act)?"checked":""} onchange="toggleFAASel('${a.act}')">
-          <span style="flex:1;min-width:0">
-            <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${esc(a.name||a.act)}</span>
-            <span class="muted small">${esc(a.act)} ${a.business_name?"• "+esc(a.business_name):""} ${a.currency?"• "+esc(a.currency):""}</span>
-          </span>
-          <span class="tag ${a.account_status===1?"":"pink"}" style="font-size:11px">${faaStatusLabel(a.account_status)}</span>
-        </label>`).join("")}
-    </div>
-    <div class="row mt">
-      <button class="btn primary" onclick="bulkAddSelectedAccounts()">➕ เพิ่มที่เลือกไว้เป็นโปรไฟล์ (${FAA.sel.size})</button>
-    </div>`;
-}
-function bulkAddSelectedAccounts(){
-  if(!FAA.sel.size) return toast("ยังไม่ได้ติ๊กเลือกบัญชี","warn");
-  let added=0, skipped=0, firstNewId=null;
-  FAA.sel.forEach(act=>{
-    const a=FAA.items.find(x=>x.act===act); if(!a) return;
-    if(S.profiles.some(p=>p.act===act)){ skipped++; return; }
-    const id="p_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
-    S.profiles.push({id, name:a.name||act, token:FAA.token, act});
-    if(!firstNewId) firstNewId=id;
-    added++;
-  });
-  LS.set("profiles",S.profiles);
-  if(!S.activeProfileId && firstNewId){ switchProfile(firstNewId); }
-  else { renderAccountSwitcher(); if(S.page==="token") PAGES.token(); }
-  toast(`💾 เพิ่ม ${added} บัญชีเป็นโปรไฟล์แล้ว${skipped?` (ข้าม ${skipped} บัญชีที่มีอยู่แล้ว)`:""}`,"ok",6000);
-}
 function tkSave(){
   S.token=$("tkVal").value.trim(); S.act=$("tkAct").value.trim();
   if(S.act && !S.act.startsWith("act_")) S.act="act_"+S.act;
@@ -1697,10 +1589,8 @@ function tkRevoke(){
 
 /* ---------- Init ---------- */
 renderTopNav(); renderMobileNav(); connBadge(); renderAccountSwitcher();
-if(!checkOAuthRedirect()){
-  if(!S.token||!S.act){ go("token"); toast("👋 ยินดีต้อนรับนักเรียน! เริ่มที่หน้า 🔑 Token → กดปุ่ม 📖 คู่มือ เพื่อสร้าง Token/Key ของตัวเอง (ทุกอย่างเก็บในเครื่องคุณเท่านั้น)","info",10000); }
-  else go("dashboard");
-}
+if(!S.token||!S.act){ go("token"); toast("👋 ยินดีต้อนรับ! เริ่มที่หน้า 🔑 Token → กดปุ่ม 📖 คู่มือ เพื่อสร้าง Token/Key ของตัวเอง (ทุกอย่างเก็บในเครื่องคุณเท่านั้น)","info",10000); }
+else go("dashboard");
 </script>
 
 <script>
@@ -2427,7 +2317,7 @@ function renderGeoMap(m){
 }
 /* ---------- คู่มือมือใหม่ ---------- */
 const GUIDES={
-meta:{t:"🔑 วิธีเชื่อมต่อ Meta (Token + Ad Account ID)",b:'<strong>สร้างแอป Meta ก่อน (ครั้งเดียว ใช้ได้ทั้ง 2 วิธีด้านล่าง)</strong>\n1. เข้า developers.facebook.com → ล็อกอิน → My Apps → <strong>Create App</strong>\n2. เลือกประเภท <strong>Business</strong> → ตั้งชื่อแอปอะไรก็ได้ → สร้าง\n3. ในแดชบอร์ดแอป กด <strong>Add Product</strong> → เพิ่ม <strong>Marketing API</strong>\n4. <strong>เผยแพร่แอป</strong>: Settings → Basic → ใส่ Privacy Policy URL (ทำหน้าเดียวฟรีด้วย Google Sites ได้) → กดเผยแพร่ที่เมนูซ้าย (จำเป็น! ไม่งั้นสร้างโฆษณาผ่าน API ไม่ได้)\n\n<strong>─────────────────────</strong>\n<strong>วิธีที่ 1 — เชื่อมต่อไว (แนะนำ ไม่ต้องหา Ad Account ID เอง)</strong>\n1. ในแอปเดิม กด Add Product → เพิ่ม <strong>Facebook Login</strong> → Settings → ใส่ <strong>Valid OAuth Redirect URIs</strong> เป็น URL ที่ Host เว็บนี้ไว้ (เช่น https://ชื่อ.github.io/knockads/) — ต้องเป็น URL จริง ใช้กับไฟล์ที่เปิดจากเครื่อง (file://) ไม่ได้\n2. Settings → Basic → ก๊อป <strong>App ID</strong>\n3. วาง App ID ในการ์ด "🔗 เชื่อมต่อไว" หน้า Token → กด <strong>เชื่อมต่อด้วย Facebook Login</strong> → ล็อกอิน + กดยอมรับสิทธิ์\n4. ระบบจะดึงรายชื่อบัญชีโฆษณาทั้งหมดที่เข้าถึงได้มาให้ติ๊กเลือกอัตโนมัติ — กด "เพิ่มที่เลือกไว้เป็นโปรไฟล์" แล้วสลับใช้งานได้เลยจากปุ่ม 🏢 มุมขวาบน\n\n<em>มีอีกทางลัด:</em> ถ้ามี Token อยู่แล้ว (จากวิธีที่ 2 ด้านล่าง) วางในช่อง META ACCESS TOKEN แล้วกด "ดึงรายชื่อบัญชีจาก Token ด้านล่าง" ได้เลย ไม่ต้องสร้าง Facebook Login/App ID ก็ได้ ใช้ได้แม้เปิดไฟล์จากเครื่อง\n\n<strong>─────────────────────</strong>\n<strong>วิธีที่ 2 — แบบ Manual (ใช้ได้เสมอ ไม่ต้อง Host)</strong>\n1. ไปที่ developers.facebook.com/tools/explorer\n2. มุมขวา: เลือกแอปของคุณ → Add Permissions 4 ตัว: <span class="tag">ads_read</span><span class="tag">ads_management</span><span class="tag">pages_read_engagement</span><span class="tag">pages_manage_ads</span>\n3. กด <strong>Generate Access Token</strong> → ยืนยัน → ก๊อป Token\n4. ต่ออายุเป็น 60 วัน: developers.facebook.com/tools/debug/accesstoken → วาง Token → Debug → กด <strong>Extend Access Token</strong> ล่างสุด → ใช้ตัวที่ได้ใหม่\n5. หา Ad Account ID: เปิด adsmanager.facebook.com → ดูที่ URL มี <strong>act=123456789</strong> → ใช้เป็น <strong>act_123456789</strong>\n\nวาง 2 ค่าในการ์ด META ACCESS TOKEN (แบบ Manual) → 💾 บันทึก → 🧪 ทดสอบ Token\n\n<strong>หมายเหตุสำคัญเรื่องแจกลูกศิษย์:</strong> วิธีที่ 1 (ปุ่ม Facebook Login) ใช้ได้ทันทีเฉพาะบัญชี Meta ที่เป็น Admin/Developer/Tester ของแอปนี้ (เหมาะกับบัญชีของคุณเอง) — ถ้าจะให้ลูกศิษย์ทุกคนกดปุ่มนี้ได้เองด้วย Facebook ของตัวเอง ต้องส่งแอปให้ Meta ตรวจสอบ (<strong>App Review + Business Verification</strong>) ก่อน ซึ่งต้องยื่นเอกสารธุรกิจ/Privacy Policy/วิดีโอสาธิตการใช้งาน ใช้เวลาประมาณ 1-4 สัปดาห์ — ระหว่างรอ ลูกศิษย์ใช้วิธีที่ 2 (แปะ Token เอง) ได้ตามปกติ หรือ Add ลูกศิษย์เป็น Tester ในแอป (Roles → Testers) เพื่อให้ใช้วิธีที่ 1 ได้ก่อนโดยไม่ต้องรอ Review'},
+meta:{t:"🔑 วิธีเชื่อมต่อ Meta (Token + Ad Account ID)",b:'<strong>สร้างแอป Meta ก่อน (ครั้งเดียว)</strong>\n1. เข้า developers.facebook.com → ล็อกอิน → My Apps → <strong>Create App</strong>\n2. เลือกประเภท <strong>Business</strong> → ตั้งชื่อแอปอะไรก็ได้ → สร้าง\n3. ในแดชบอร์ดแอป กด <strong>Add Product</strong> → เพิ่ม <strong>Marketing API</strong>\n4. <strong>เผยแพร่แอป</strong>: Settings → Basic → ใส่ Privacy Policy URL (ทำหน้าเดียวฟรีด้วย Google Sites ได้) → กดเผยแพร่ที่เมนูซ้าย (จำเป็น! ไม่งั้นสร้างโฆษณาผ่าน API ไม่ได้)\n\n<strong>เอา Access Token</strong>\n1. ไปที่ developers.facebook.com/tools/explorer\n2. มุมขวา: เลือกแอปของคุณ → Add Permissions 4 ตัว: <span class="tag">ads_read</span><span class="tag">ads_management</span><span class="tag">pages_read_engagement</span><span class="tag">pages_manage_ads</span>\n3. กด <strong>Generate Access Token</strong> → ยืนยัน → ก๊อป Token\n4. ต่ออายุเป็น 60 วัน: developers.facebook.com/tools/debug/accesstoken → วาง Token → Debug → กด <strong>Extend Access Token</strong> ล่างสุด → ใช้ตัวที่ได้ใหม่\n5. หา Ad Account ID: เปิด adsmanager.facebook.com → ดูที่ URL มี <strong>act=123456789</strong> → ใช้เป็น <strong>act_123456789</strong>\n\nวาง 2 ค่าในการ์ด META ACCESS TOKEN → 💾 บันทึก → 🧪 ทดสอบ Token'},
 anthropic:{t:"🤖 วิธีเอา Anthropic API Key (ฟีเจอร์ AI ทั้งหมด)",b:'1. เข้า <strong>console.anthropic.com</strong> → สมัคร/ล็อกอิน\n2. เมนู <strong>Billing</strong> → เติมเครดิต (ขั้นต่ำ $5 ≈ 180 บาท ใช้วิเคราะห์ได้หลายร้อยครั้ง)\n3. เมนู <strong>API Keys</strong> → <strong>Create Key</strong> → ก๊อป key ขึ้นต้น <strong>sk-ant-</strong> (โชว์ครั้งเดียว!)\n4. วางในการ์ด ANTHROPIC API KEY → 💾 บันทึก\n\nใช้ขับเคลื่อน: AI แนะนำ, Clone Studio (คิดกลุ่มเป้าหมาย/copy), วิเคราะห์ Funnel/Geo/Golden Hours, รายงานสัปดาห์'},
 openai:{t:"🪄 วิธีเอา OpenAI API Key (Gen รูปภาพถ่ายจริง)",b:'1. เข้า <strong>platform.openai.com</strong> → สมัคร/ล็อกอิน\n2. Settings → <strong>Billing</strong> → ผูกบัตร + เติมเครดิต (ขั้นต่ำ $5)\n3. เมนู <strong>API keys</strong> → <strong>Create new secret key</strong> → ก๊อป key ขึ้นต้น <strong>sk-</strong>\n4. <strong>สำคัญ:</strong> ปลดล็อกโมเดลรุ่นล่าสุด gpt-image-2: Settings → <strong>Organization → Verify</strong> ยืนยันตัวตนครั้งเดียว (ถ้าไม่ทำ ระบบจะถอยไปใช้รุ่นเก่ากว่าให้อัตโนมัติ)\n5. วางในการ์ด OPENAI API KEY → 💾 บันทึก\n\nค่า Gen ~1-6 บาท/รูป คิดกับบัญชี OpenAI ของคุณโดยตรง'},
 line:{t:"💬 วิธีเชื่อม LINE Bot (สั่งงานผ่านแชท + แจ้งเตือน)",b:'ใช้ <strong>Cloudflare Worker (ฟรี)</strong> เป็นบอทกลางทำงาน 24 ชม. — คู่มือละเอียดอยู่ในไฟล์ <strong>LINE-SETUP.md</strong> สรุปย่อ:\n\n<strong>A. สร้างบอท LINE (5 นาที)</strong>\ndevelopers.line.biz → Create provider → <strong>Messaging API channel</strong> → จด Channel secret + Issue Channel access token → สแกน QR แอดบอทเป็นเพื่อน → ปิด Auto-reply / เปิด Webhook ใน OA Manager\n\n<strong>B. สร้าง Worker (5 นาที)</strong>\ndash.cloudflare.com → Workers → Create → Edit code → วางโค้ดจากไฟล์ <strong>line-ads-worker.js</strong> → Deploy → Settings → Variables: META_TOKEN, ACT_ID, LINE_TOKEN, LINE_SECRET, NOTIFY_SECRET(ตั้งเอง) → Triggers → Cron: <strong>0 2 * * *</strong>\n\n<strong>C. เชื่อม (5 นาที)</strong>\n1. Webhook URL = https://ชื่อ.workers.dev<strong>/webhook</strong> → Verify → เปิด Use webhook\n2. พิมพ์ <strong>id</strong> ในแชท → เอา userId ใส่ตัวแปร LINE_USER_ID → Deploy ใหม่\n3. การ์ด LINE หน้านี้: Worker URL + Notify Secret → 🧪 ทดสอบ\n\nคำสั่ง: สถานะ • รายการ • ปิด 3 ยืนยัน • เปิด 3 ยืนยัน • แจ้งเตือน เปิด/ปิด'}
