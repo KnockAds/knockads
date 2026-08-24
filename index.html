@@ -861,7 +861,7 @@ function renderWizard(){
     <div id="imgStat" class="small mt">${WZ.cr.imgHash?`<span class="tag">✓ ${esc(WZ.cr.imgName)} (hash: ${esc(WZ.cr.imgHash.slice(0,14))}…)</span>`:'<span class="muted">ยังไม่ได้อัปโหลดรูป</span>'}</div>
     <label>Primary Text (ข้อความหลัก)</label><textarea id="wPri" rows="3" placeholder="ข้อความโฆษณา...">${esc(WZ.cr.primary)}</textarea>
     <div class="grid g2"><div><label>Headline</label><input id="wHead" value="${esc(WZ.cr.headline)}"></div><div><label>Description</label><input id="wDesc" value="${esc(WZ.cr.desc)}"></div></div>
-    <div class="grid g2"><div><label>Link URL</label><input id="wLink" value="${esc(WZ.cr.link)}" placeholder="https://..."></div><div><label>CTA</label><select id="wCTA" ${WZ.tgt.optGoal==="CONVERSATIONS"?"disabled":""}>${CTAS.map(c=>`<option value="${c}" ${WZ.cr.cta===c?"selected":""}>${c}</option>`).join("")}</select>${WZ.tgt.optGoal==="CONVERSATIONS"?'<div class="muted small">🔒 ล็อกอัตโนมัติตาม Optimization Goal ที่เลือกไว้ (ปลายทางข้อความ)</div>':""}</div></div>
+    <div class="grid g2"><div><label>Link URL${WZ.tgt.optGoal==="CONVERSATIONS"?' <span class="muted small">(ไม่บังคับ — โฆษณาแบบข้อความไม่ต้องมีเว็บไซต์ก็ได้)</span>':""}</label><input id="wLink" value="${esc(WZ.cr.link)}" placeholder="${WZ.tgt.optGoal==="CONVERSATIONS"?"เว้นว่างได้ ถ้าไม่มีเว็บไซต์":"https://..."}"></div><div><label>CTA</label><select id="wCTA" ${WZ.tgt.optGoal==="CONVERSATIONS"?"disabled":""}>${CTAS.map(c=>`<option value="${c}" ${WZ.cr.cta===c?"selected":""}>${c}</option>`).join("")}</select>${WZ.tgt.optGoal==="CONVERSATIONS"?'<div class="muted small">🔒 ล็อกอัตโนมัติตาม Optimization Goal ที่เลือกไว้ (ปลายทางข้อความ)</div>':""}</div></div>
     <div class="row mt spread"><button class="btn" onclick="WZ.step=2;renderWizard()">← กลับ</button><button class="btn primary" onclick="wizSave(3,4)">ถัดไป →</button></div>`;
   if(WZ.step===4){
     const g={all:"ทั้งหมด","1":"ชาย","2":"หญิง"}[WZ.tgt.gender];
@@ -883,7 +883,7 @@ function wizSave(from,to){
   if(from===3){ WZ.cr={...WZ.cr,pageId:$("wPage").value,primary:$("wPri").value,headline:$("wHead").value,desc:$("wDesc").value,link:$("wLink").value,cta:$("wCTA").value};
     if(!WZ.cr.pageId) return toast("กรุณาเลือก Facebook Page","warn");
     if(!WZ.cr.imgHash) return toast("กรุณาอัปโหลดรูปโฆษณา","warn");
-    if(!WZ.cr.link) return toast("กรุณาใส่ Link URL","warn"); }
+    if(!WZ.cr.link&&WZ.tgt.optGoal!=="CONVERSATIONS") return toast("กรุณาใส่ Link URL (ยกเว้นเลือก Optimization Goal เป็น \"ข้อความ\" ที่ไม่บังคับ)","warn"); }
   WZ.step=to; renderWizard();
 }
 async function loadPages(){
