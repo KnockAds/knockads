@@ -6,7 +6,7 @@
 <title>Knock Ads by Knock Out — ระบบควบคุมโฆษณาครบวงจร</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%8A%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
 /*!
  * Chart.js v4.4.4
@@ -32,8 +32,8 @@
   --glow-pink:0 6px 18px rgba(255,201,60,.35); --glow-blue:0 6px 18px rgba(200,30,58,.22);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Work Sans','Noto Sans Thai',sans-serif;font-size:14px;min-height:100vh}
-h1,h2,h3,.brand{font-family:'Anton','Noto Sans Thai',sans-serif;font-weight:400}
+body{background:var(--bg);color:var(--text);font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:14px;min-height:100vh}
+h1,h2,h3,.brand{font-family:'Prompt','Noto Sans Thai',sans-serif;font-weight:700}
 a{color:var(--secondary)}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:14px;width:100%;outline:none;transition:border .15s,box-shadow .15s}
@@ -49,7 +49,7 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 .brand span{color:var(--secondary)}
 #navgroups{display:flex;align-items:center;gap:2px;height:64px}
 .navgrp{position:relative;height:64px;display:flex}
-.navgrp-btn{background:transparent;border:none;height:64px;padding:0 14px;font-family:'Work Sans','Noto Sans Thai',sans-serif;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:5px;box-shadow:inset 0 -3px 0 transparent;transition:.15s}
+.navgrp-btn{background:transparent;border:none;height:64px;padding:0 14px;font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:5px;box-shadow:inset 0 -3px 0 transparent;transition:.15s}
 .navgrp-btn .car{font-size:9px;opacity:.7}
 .navgrp-btn:hover{color:var(--text)}
 .navgrp-btn.active{color:var(--text);font-weight:600;box-shadow:inset 0 -3px 0 var(--primary)}
@@ -61,7 +61,7 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 .navdd-item.active{color:var(--text);font-weight:600;background:rgba(255,201,60,.16);box-shadow:inset 3px 0 0 var(--primary)}
 #menuBtn{display:none;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:16px;margin-left:auto}
 .acctsw{position:relative}
-.acctsw-btn{background:var(--card2);border:1px solid var(--border);border-radius:99px;height:34px;padding:0 12px;font-family:'Work Sans','Noto Sans Thai',sans-serif;font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px;max-width:180px}
+.acctsw-btn{background:var(--card2);border:1px solid var(--border);border-radius:99px;height:34px;padding:0 12px;font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px;max-width:180px}
 .acctsw-btn span.acctname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acctsw-btn .car{font-size:8px;opacity:.7;flex-shrink:0}
 .acctsw.open .acctsw-btn{border-color:var(--secondary)}
@@ -73,12 +73,12 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 #mobileNav{display:none;position:fixed;inset:0;background:var(--bg);z-index:90;overflow-y:auto;padding:18px;flex-direction:column;gap:2px}
 #mobileNav.open{display:flex}
 #mobileNav .mnclose{align-self:flex-end;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text);margin-bottom:14px}
-#mobileNav .navgroup{font-family:'Oswald','Noto Sans Thai',sans-serif;padding:14px 10px 4px;color:var(--muted);font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;font-weight:600}
+#mobileNav .navgroup{font-family:'Prompt','Noto Sans Thai',sans-serif;padding:14px 10px 4px;color:var(--muted);font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;font-weight:600}
 #mobileNav .navitem{display:flex;align-items:center;padding:11px 12px;border-radius:6px;font-size:14.5px;color:var(--text)}
 #mobileNav .navitem.active{background:rgba(255,201,60,.16);font-weight:600;box-shadow:inset 3px 0 0 var(--primary)}
 #main{flex:1;max-width:1600px;width:100%;margin:0 auto;padding:28px 32px 44px}
 #topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap}
-#pageTitle{font-family:'Anton','Noto Sans Thai',sans-serif;font-size:26px;letter-spacing:.3px}
+#pageTitle{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:26px;letter-spacing:.3px;font-weight:700}
 #pageTitle::after{content:"";display:block;width:52px;height:3px;margin-top:8px;background:var(--primary);border-radius:2px}
 #connBadge{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
 #connBadge.ok{color:var(--accent);border-color:rgba(46,125,79,.35)}
@@ -86,12 +86,12 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 
 /* Components */
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:0 2px 10px rgba(25,20,16,.05)}
-.card h3{font-family:'Oswald','Noto Sans Thai',sans-serif;font-size:12.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:12px;font-weight:600}
+.card h3{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:12.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:12px;font-weight:600}
 .grid{display:grid;gap:14px}
 .g6{grid-template-columns:repeat(6,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
 .kpi{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
-.kpi .lbl{font-family:'Oswald','Noto Sans Thai',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:500}
-.kpi .val{font-family:'Anton','Noto Sans Thai',sans-serif;font-size:21px;font-weight:400;margin:8px 0 4px;color:var(--text)}
+.kpi .lbl{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:500}
+.kpi .val{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:21px;font-weight:700;margin:8px 0 4px;color:var(--text)}
 .kpi .chg{font-size:12px;font-weight:600}
 .chg.up{color:var(--accent)}.chg.down{color:var(--danger)}.chg.flat{color:var(--muted)}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:13.5px;font-weight:500;transition:.15s}
@@ -107,7 +107,7 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 .seg button{padding:7px 13px;background:transparent;border:none;color:var(--muted);font-size:12.5px}
 .seg button.active{background:linear-gradient(135deg,rgba(255,201,60,.4),rgba(200,30,58,.28));color:var(--text);font-weight:600}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-family:'Oswald','Noto Sans Thai',sans-serif;color:var(--muted);text-align:left;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600}
+th{font-family:'Prompt','Noto Sans Thai',sans-serif;color:var(--muted);text-align:left;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600}
 td{padding:9px 10px;border-bottom:1px solid rgba(25,20,16,.08);vertical-align:middle}
 tr:hover td{background:rgba(255,201,60,.06)}
 .num{text-align:right;font-variant-numeric:tabular-nums}
@@ -132,7 +132,7 @@ th.num{text-align:right}
 hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .chartbox{position:relative;height:290px}
 .ai-out{background:var(--card2);border:1px solid rgba(255,201,60,.35);border-radius:12px;padding:16px 18px;line-height:1.75;white-space:pre-wrap;font-size:13.5px}
-.ai-out h1,.ai-out h2,.ai-out h3{font-family:'Work Sans','Noto Sans Thai';color:var(--secondary);margin:10px 0 4px;font-size:15px}
+.ai-out h1,.ai-out h2,.ai-out h3{font-family:'Prompt','Noto Sans Thai';color:var(--secondary);margin:10px 0 4px;font-size:15px}
 .ai-out strong{color:var(--secondary)}
 .ai-out ul{margin-left:20px}
 .funnel-step{display:flex;align-items:center;gap:14px;margin-bottom:6px}
@@ -404,7 +404,7 @@ function mkChart(id, cfg){
     if(charts[id]) charts[id].destroy();
     const el=$(id); if(!el) return;
     Chart.defaults.color="#6B5F52"; Chart.defaults.borderColor="rgba(25,20,16,.08)";
-    Chart.defaults.font.family="'Work Sans','Noto Sans Thai',sans-serif";
+    Chart.defaults.font.family="'Prompt','Noto Sans Thai',sans-serif";
     charts[id]=new Chart(el,cfg); return charts[id];
   }catch(e){ console.warn("chart error",e); }
 }
@@ -1474,7 +1474,7 @@ function beCalc(){
     vs=`<hr><strong>เทียบ CPA จริง ${fmtB(cpaNow)}:</strong> ${m>=0?`<span style="color:var(--accent)">✅ กำไรจริง ${fmtB(m)}/ออเดอร์</span>`:`<span style="color:var(--danger)">❌ ขาดทุน ${fmtB(-m)}/ออเดอร์ — ต้องกด CPA ให้ต่ำกว่า ${fmtB(beCPA)}</span>`}`; }
   $("beOut").innerHTML=`<div style="line-height:2">
     💰 <strong>กำไรต่อชิ้น (ก่อนค่าแอด):</strong> ${fmtB(profit)}<br>
-    🎯 <strong>CPA คุ้มทุน (ห้ามเกิน):</strong> <span style="color:var(--warn);font-family:Orbitron">${fmtB(beCPA)}</span><br>
+    🎯 <strong>CPA คุ้มทุน (ห้ามเกิน):</strong> <span style="color:var(--warn);font-family:Prompt;font-weight:700">${fmtB(beCPA)}</span><br>
     📦 <strong>ต้องขายให้ได้:</strong> ${Math.ceil(needSell)} ชิ้น/วัน (งบ ${fmtB(ads)}/วัน)<br>
     📈 <strong>ROAS ที่ต้องได้:</strong> ≥ ${roasNeed.toFixed(2)}x${vs}</div>`;
 }
