@@ -849,7 +849,7 @@ function renderWizard(){
     <div class="row"><input id="wIntQ" placeholder="เช่น skincare, ฟิตเนส, กาแฟ" style="flex:1"><button class="btn blue" onclick="searchInterests()">🔍 ค้นหา</button></div>
     <div id="intResults" class="mt small"></div>
     <div id="intPicked" class="mt">${WZ.tgt.interests.map((it,i)=>`<span class="tag pink">${esc(it.name)} <a style="cursor:pointer" onclick="WZ.tgt.interests.splice(${i},1);renderWizard()">✕</a></span>`).join("")||'<span class="muted small">ยังไม่เลือก interest (ไม่บังคับ — ปล่อยว่าง = Broad)</span>'}</div>
-    <label>Optimization Goal</label><select id="wOG" onchange="WZ.tgt.country=$('wCty').value;WZ.tgt.ageMin=+$('wA1').value;WZ.tgt.ageMax=+$('wA2').value;WZ.tgt.gender=$('wGen').value;WZ.tgt.start=$('wStart').value;WZ.tgt.end=$('wEnd').value;WZ.tgt.optGoal=this.value;renderWizard()">${OPT_GOALS.map(o=>`<option value="${o[0]}" ${WZ.tgt.optGoal===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>
+    <label>Performance Goal (เป้าหมายประสิทธิภาพ)</label><select id="wOG" onchange="WZ.tgt.country=$('wCty').value;WZ.tgt.ageMin=+$('wA1').value;WZ.tgt.ageMax=+$('wA2').value;WZ.tgt.gender=$('wGen').value;WZ.tgt.start=$('wStart').value;WZ.tgt.end=$('wEnd').value;WZ.tgt.optGoal=this.value;renderWizard()">${OPT_GOALS.map(o=>`<option value="${o[0]}" ${WZ.tgt.optGoal===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>
     ${WZ.tgt.optGoal==="CONVERSATIONS"?`<label>ปลายทางข้อความ (Messaging Destination)</label><select id="wMsgDest"><option value="ANY" ${WZ.tgt.msgDest==="ANY"?"selected":""}>อัตโนมัติ — ให้ Meta เลือกให้ (แนะนำ)</option><option value="MESSENGER" ${WZ.tgt.msgDest==="MESSENGER"?"selected":""}>Messenger</option><option value="WHATSAPP" ${WZ.tgt.msgDest==="WHATSAPP"?"selected":""}>WhatsApp (เพจต้องเชื่อม WhatsApp ไว้ก่อน)</option></select>
     <div class="muted small mb">⚠️ ต้องเลือกตัวนี้ด้วย ไม่งั้น Meta จะมองว่าไม่รู้ปลายทางชัดเจน แล้วเซ็ต Conversion location เป็น "Website" ให้อัตโนมัติแทนที่จะเป็น "ข้อความ"</div>`:""}
     <div class="grid g2"><div><label>วันเริ่ม (ไม่บังคับ)</label><input id="wStart" type="datetime-local" value="${WZ.tgt.start}"></div><div><label>วันสิ้นสุด (ไม่บังคับ)</label><input id="wEnd" type="datetime-local" value="${WZ.tgt.end}"></div></div>
@@ -867,7 +867,7 @@ function renderWizard(){
     const g={all:"ทั้งหมด","1":"ชาย","2":"หญิง"}[WZ.tgt.gender];
     b.innerHTML=wizNav()+`<div class="ai-out" style="border-color:var(--border)">
 <strong>Campaign:</strong> ${esc(WZ.camp.name)} • ${esc(WZ.camp.objective)} • งบ${WZ.camp.budgetType==="daily"?"รายวัน":"ตลอดแคมเปญ"} ${fmtB(WZ.camp.budget)}
-<strong>Targeting:</strong> ${esc(WZ.tgt.country)} • อายุ ${WZ.tgt.ageMin}-${WZ.tgt.ageMax} • เพศ ${g} • ${WZ.tgt.interests.length?WZ.tgt.interests.map(i=>esc(i.name)).join(", "):"Broad"} • Goal: ${esc(WZ.tgt.optGoal)}${WZ.tgt.optGoal==="CONVERSATIONS"?" ("+esc(WZ.tgt.msgDest)+")":""}
+<strong>Targeting:</strong> ${esc(WZ.tgt.country)} • อายุ ${WZ.tgt.ageMin}-${WZ.tgt.ageMax} • เพศ ${g} • ${WZ.tgt.interests.length?WZ.tgt.interests.map(i=>esc(i.name)).join(", "):"Broad"} • Performance Goal: ${esc((OPT_GOALS.find(o=>o[0]===WZ.tgt.optGoal)||[])[1]||WZ.tgt.optGoal)}${WZ.tgt.optGoal==="CONVERSATIONS"?" ("+esc(WZ.tgt.msgDest)+")":""}
 <strong>Creative:</strong> Page ${esc(WZ.cr.pageId||"—")} • รูป ${WZ.cr.imgHash?"✓":"✕ ไม่มี"} • "${esc(WZ.cr.headline)}" • CTA ${esc(WZ.cr.cta)}
 <strong>Link:</strong> ${esc(WZ.cr.link||"—")}</div>
     <div class="muted small mt">โฆษณาจะถูกสร้างในสถานะ <strong>PAUSED</strong> เพื่อให้คุณตรวจสอบใน Ads Manager ของ Meta ก่อนเปิดใช้จริง</div>
@@ -883,7 +883,7 @@ function wizSave(from,to){
   if(from===3){ WZ.cr={...WZ.cr,pageId:$("wPage").value,primary:$("wPri").value,headline:$("wHead").value,desc:$("wDesc").value,link:$("wLink").value,cta:$("wCTA").value};
     if(!WZ.cr.pageId) return toast("กรุณาเลือก Facebook Page","warn");
     if(!WZ.cr.imgHash) return toast("กรุณาอัปโหลดรูปโฆษณา","warn");
-    if(!WZ.cr.link&&WZ.tgt.optGoal!=="CONVERSATIONS") return toast("กรุณาใส่ Link URL (ยกเว้นเลือก Optimization Goal เป็น \"ข้อความ\" ที่ไม่บังคับ)","warn"); }
+    if(!WZ.cr.link&&WZ.tgt.optGoal!=="CONVERSATIONS") return toast("กรุณาใส่ Link URL (ยกเว้นเลือก Performance Goal เป็น \"ข้อความ\" ที่ไม่บังคับ)","warn"); }
   WZ.step=to; renderWizard();
 }
 async function loadPages(){
