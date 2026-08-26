@@ -88,7 +88,7 @@ label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12.5px;font-w
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:0 2px 10px rgba(25,20,16,.05)}
 .card h3{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:12.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:12px;font-weight:600}
 .grid{display:grid;gap:14px}
-.g6{grid-template-columns:repeat(6,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.g6{grid-template-columns:repeat(6,1fr)}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
 .kpi{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
 .kpi .lbl{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:500}
 .kpi .val{font-family:'Prompt','Noto Sans Thai',sans-serif;font-size:21px;font-weight:700;margin:8px 0 4px;color:var(--text)}
@@ -159,13 +159,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 @media(max-width:1100px){
   #navgroups{display:none}
   #menuBtn{display:flex;align-items:center;justify-content:center}
-  .g6{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}
+  .g6,.g5{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:760px){
   #topnavInner{padding:0 16px}
   .brand{font-size:16px}
   #main{padding:18px 16px 32px}
-  .g6,.g4,.g3,.g2{grid-template-columns:repeat(2,1fr)}
+  .g6,.g5,.g4,.g3,.g2{grid-template-columns:repeat(2,1fr)}
   .tablewrap{overflow-x:auto}
 }
 .tablewrap{overflow-x:auto}
@@ -357,6 +357,48 @@ const purchases=a=>Math.max(actVal(a,"omni_purchase"), actVal(a,"purchase"), act
 const messages=a=>Math.max(...MSG_TYPES.map(t=>actVal(a,t)),0);
 function cpa(spend, act){ const p=purchases(act)||messages(act); return p>0? spend/p : null; }
 function purchaseValue(av){ const v=(av||[]).find(x=>PURCHASE_TYPES.includes(x.action_type)); return v?+v.value:0; }
+function closingRate(act){ const m=messages(act), p=purchases(act); return m>0? p/m*100 : null; }
+function costPerPurchase(spend, act){ const p=purchases(act); return p>0? (+spend)/p : null; }
+function costPerMessage(spend, act){ const m=messages(act); return m>0? (+spend)/m : null; }
+function aov(av, act){ const p=purchases(act); return p>0? purchaseValue(av)/p : null; }
+function roas(spend, av){ return (+spend)>0? purchaseValue(av)/(+spend) : null; }
+/* ---------- Full metric column set (matches Dashboard KPIs) — used by every table page ---------- */
+const FULL_METRIC_HEAD = `<th class="num">Spend</th><th class="num">Impr.</th><th class="num">Clicks</th><th class="num">Reach</th><th class="num">CTR</th><th class="num">CPM</th><th class="num">Msg. Started</th><th class="num">Purchases</th><th class="num">Purchases Value</th><th class="num">Closing Rate</th><th class="num">Cost/Purchase</th><th class="num">AOV</th><th class="num">ROAS</th>`;
+function fullMetricCells(i){
+  const sp=+i.spend||0, act=i.actions, av=i.action_values;
+  const msg=messages(act), pur=purchases(act), rev=purchaseValue(av);
+  const cr=closingRate(act), cpp=costPerPurchase(sp,act), a=aov(av,act), r=roas(sp,av);
+  return `<td class="num">${fmtB(sp)}</td><td class="num">${fmtN(i.impressions)}</td><td class="num">${fmtN(i.clicks)}</td><td class="num">${fmtN(i.reach)}</td>`+
+    `<td class="num">${fmtP(i.ctr)}</td><td class="num">${fmtB(i.cpm)}</td><td class="num">${fmtN(msg)}</td><td class="num">${fmtN(pur)}</td>`+
+    `<td class="num">${fmtB(rev)}</td><td class="num">${cr!==null?fmtP(cr):"—"}</td><td class="num">${cpp!==null?fmtB(cpp):"—"}</td>`+
+    `<td class="num">${a!==null?fmtB(a):"—"}</td><td class="num">${r!==null?r.toFixed(2)+"x":"—"}</td>`;
+}
+/* Same 13 metrics as fullMetricCells, but as [label,value] pairs for KPI-card grids */
+function metricKPIList(i){
+  const sp=+i.spend||0, act=i.actions, av=i.action_values;
+  const msg=messages(act), pur=purchases(act), rev=purchaseValue(av);
+  const cr=closingRate(act), cpp=costPerPurchase(sp,act), a=aov(av,act), r=roas(sp,av);
+  return [
+    ["SPEND",fmtB(sp)],["IMPRESSIONS",fmtN(i.impressions)],["CLICKS",fmtN(i.clicks)],["REACH",fmtN(i.reach)],
+    ["CTR",fmtP(i.ctr)],["CPM",fmtB(i.cpm)],["MESSAGING STARTED",fmtN(msg)],["PURCHASES",fmtN(pur)],
+    ["PURCHASES VALUE",fmtB(rev)],["CLOSING RATE",cr!==null?fmtP(cr):"—"],["COST / PURCHASE",cpp!==null?fmtB(cpp):"—"],
+    ["AVERAGE ORDER VALUE",a!==null?fmtB(a):"—"],["PURCHASES ROAS",r!==null?r.toFixed(2)+"x":"—"]
+  ];
+}
+/* Merge a list of raw Meta insight rows (e.g. one breakdown group) into a single row fullMetricCells() can render */
+function aggregateInsights(list){
+  const t={spend:0,impressions:0,clicks:0,reach:0}, actMap={}, avMap={};
+  (list||[]).forEach(r=>{
+    t.spend+=+r.spend||0; t.impressions+=+r.impressions||0; t.clicks+=+r.clicks||0; t.reach+=+r.reach||0;
+    (r.actions||[]).forEach(a=>{ actMap[a.action_type]=(actMap[a.action_type]||0)+(parseFloat(a.value)||0); });
+    (r.action_values||[]).forEach(a=>{ avMap[a.action_type]=(avMap[a.action_type]||0)+(parseFloat(a.value)||0); });
+  });
+  t.ctr = t.impressions>0? t.clicks/t.impressions*100 : 0;
+  t.cpm = t.impressions>0? t.spend/t.impressions*1000 : 0;
+  t.actions=Object.entries(actMap).map(([action_type,value])=>({action_type,value:String(value)}));
+  t.action_values=Object.entries(avMap).map(([action_type,value])=>({action_type,value:String(value)}));
+  return t;
+}
 </script>
 <script>
 /* ---------- Signal lights ---------- */
@@ -603,7 +645,7 @@ PAGES.dashboard = async function(){
     </div>
     <div class="grid g6" id="kpis">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(6)}</div>
     <h3 class="mt" style="letter-spacing:1px">🛒 ยอดขาย</h3>
-    <div class="grid g4 mb" id="kpis2">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(4)}</div>
+    <div class="grid g5 mb" id="kpis2">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(5)}</div>
     <div class="grid g3" id="kpis3">${'<div class="kpi"><div class="lbl">โหลด...</div><div class="val"><span class="spin"></span></div></div>'.repeat(3)}</div>
     <div class="grid g2 mt">
       <div class="card"><h3>💸 SPEND PER CAMPAIGN</h3><div class="chartbox"><canvas id="chSpend"></canvas></div></div>
@@ -638,8 +680,10 @@ PAGES.dashboard = async function(){
   const curAOV=curPur>0?curRev/curPur:null, prvAOV=prvPur>0?prvRev/prvPur:null;
   const curROAS=(+cur.spend)>0?curRev/(+cur.spend):null, prvROAS=(+prv.spend)>0?prvRev/(+prv.spend):null;
   const curClose=curMsg>0?curPur/curMsg*100:null, prvClose=prvMsg>0?prvPur/prvMsg*100:null;
+  const curCPM=curMsg>0?(+cur.spend)/curMsg:null, prvCPM=prvMsg>0?(+prv.spend)/prvMsg:null;
   const K2=[
     {l:"MESSAGING STARTED",v:fmtN(curMsg),c:chgHTML(curMsg,prvMsg)},
+    {l:"COST PER MESSAGE",v:curCPM!==null?fmtB(curCPM):"—",c:chgHTML(curCPM,prvCPM,true)},
     {l:"PURCHASES",v:fmtN(curPur),c:chgHTML(curPur,prvPur)},
     {l:"PURCHASES VALUE",v:fmtB(curRev),c:chgHTML(curRev,prvRev)},
     {l:"CLOSING RATE",v:curClose!==null?fmtP(curClose):"—",c:chgHTML(curClose,prvClose)},
@@ -706,12 +750,10 @@ PAGES.campaigns = async function(){
     return `<tr style="cursor:pointer" onclick="campDetail('${c.id}','${esc(c.name).replace(/'/g,"\\'")}')">
       <td>${sig} <strong>${esc(c.name)}</strong><div class="muted small">${esc(c.objective||"")}</div></td>
       <td><span class="status ${c.effective_status==="ACTIVE"?"ACTIVE":(c.effective_status==="PAUSED"?"PAUSED":"other")}">${esc(c.effective_status)}</span></td>
-      <td class="num">${fmtB(i.spend)}</td><td class="num">${fmtN(i.impressions)}</td>
-      <td class="num">${fmtN(i.clicks)}</td><td class="num">${fmtP(i.ctr)}</td>
-      <td class="num">${_cpa!==null?fmtB(_cpa):"—"}</td></tr>`;
+      ${fullMetricCells(i)}</tr>`;
   }).join("");
-  $("campCard").innerHTML=`<table><thead><tr><th>แคมเปญ</th><th>สถานะ</th><th class="num">Spend</th><th class="num">Impr.</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPA</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="7" class="empty">ไม่พบแคมเปญ</td></tr>'}</tbody></table>
+  $("campCard").innerHTML=`<table><thead><tr><th>แคมเปญ</th><th>สถานะ</th>${FULL_METRIC_HEAD}</tr></thead>
+    <tbody>${rows||'<tr><td colspan="15" class="empty">ไม่พบแคมเปญ</td></tr>'}</tbody></table>
     <div class="muted small mt">คลิกแถวเพื่อดูรายละเอียด Ad Sets + Ads</div>`;
 };
 function accAvg(list){
@@ -734,10 +776,10 @@ async function campDetail(cid, cname){
     .map(([l,v])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join("");
   const avg=accAvg(adIns);
   const mkRows=(list,nameKey)=>list.map(i=>{const _cpa=cpa(+i.spend||0,i.actions);
-    return `<tr><td>${signal({ctr:i.ctr,_cpa},avg)} ${esc(i[nameKey])}</td><td class="num">${fmtB(i.spend)}</td><td class="num">${fmtN(i.impressions)}</td><td class="num">${fmtN(i.clicks)}</td><td class="num">${fmtP(i.ctr)}</td><td class="num">${_cpa!==null?fmtB(_cpa):"—"}</td></tr>`;}).join("");
-  const head=`<thead><tr><th>ชื่อ</th><th class="num">Spend</th><th class="num">Impr.</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPA</th></tr></thead>`;
-  $("cdAdsets").innerHTML=`<table>${head}<tbody>${mkRows(asIns,"adset_name")||'<tr><td colspan="6" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
-  $("cdAds").innerHTML=`<table>${head}<tbody>${mkRows(adIns,"ad_name")||'<tr><td colspan="6" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
+    return `<tr><td>${signal({ctr:i.ctr,_cpa},avg)} ${esc(i[nameKey])}</td>${fullMetricCells(i)}</tr>`;}).join("");
+  const head=`<thead><tr><th>ชื่อ</th>${FULL_METRIC_HEAD}</tr></thead>`;
+  $("cdAdsets").innerHTML=`<table>${head}<tbody>${mkRows(asIns,"adset_name")||'<tr><td colspan="14" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
+  $("cdAds").innerHTML=`<table>${head}<tbody>${mkRows(adIns,"ad_name")||'<tr><td colspan="14" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
 }
 
 /* =====================================================================
@@ -761,8 +803,7 @@ PAGES.ads = async function(){
       <td><span class="sig">${a.sig}</span> <strong>${esc(a.name)}</strong>${closable?' <span class="tag pink">ควรปิด</span>':''}
         <div class="muted small">${esc(a.id)}</div></td>
       <td><span class="status ${a.effective_status==="ACTIVE"?"ACTIVE":(a.effective_status==="PAUSED"?"PAUSED":"other")}">${esc(a.effective_status)}</span></td>
-      <td class="num">${fmtB(i.spend)}</td><td class="num">${fmtN(i.clicks)}</td><td class="num">${fmtP(i.ctr)}</td>
-      <td class="num">${a._cpa!==null?fmtB(a._cpa):"—"}</td>
+      ${fullMetricCells(i)}
       <td><div class="row" style="gap:5px">
         ${a.effective_status==="ACTIVE"
           ? `<button class="btn sm" onclick="adStatus('${a.id}','PAUSED','${esc(a.name).replace(/'/g,"\\'")}')">⏸ ปิด</button>`
@@ -771,8 +812,8 @@ PAGES.ads = async function(){
         <button class="btn sm primary" onclick="go('aicreator');setTimeout(()=>aiPickAd(${ix}),300)">🤖 สร้างซ้ำ AI</button>
       </div></td></tr>`;
   }).join("");
-  $("adsCard").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th><th>สถานะ</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPA</th><th>Actions</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="8" class="empty">ไม่พบชิ้นงานโฆษณา</td></tr>'}</tbody></table>
+  $("adsCard").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th><th>สถานะ</th>${FULL_METRIC_HEAD}<th>Actions</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="17" class="empty">ไม่พบชิ้นงานโฆษณา</td></tr>'}</tbody></table>
     <div class="muted small mt">🟢 ดี • 🟡 ปานกลาง • 🔴 แย่ (เทียบ CTR/CPA กับค่าเฉลี่ยบัญชี) • ⚪ ไม่มีข้อมูลช่วงนี้</div>`;
 };
 function adStatus(id,st,name){
@@ -1152,16 +1193,25 @@ async function abRun(){
   const A=window._abIns[+$("abA").value], B=window._abIns[+$("abB").value];
   if(!A||!B) return toast("เลือก A และ B ก่อน","warn");
   const lvl=$("abLvl").value, nk=lvl==="ad"?"ad_name":"campaign_name";
-  const m=i=>({spend:+i.spend||0,impr:+i.impressions||0,clicks:+i.clicks||0,ctr:+i.ctr||0,cpm:+i.cpm||0,pur:purchases(i.actions),msg:messages(i.actions),cpa:cpa(+i.spend,i.actions)});
+  const m=i=>({spend:+i.spend||0,impr:+i.impressions||0,clicks:+i.clicks||0,reach:+i.reach||0,ctr:+i.ctr||0,cpm:+i.cpm||0,
+    pur:purchases(i.actions),msg:messages(i.actions),rev:purchaseValue(i.action_values),
+    close:closingRate(i.actions),cpp:costPerPurchase(+i.spend||0,i.actions),aov:aov(i.action_values,i.actions),roas:roas(+i.spend||0,i.action_values),
+    cpa:cpa(+i.spend,i.actions)});
   const a=m(A),b=m(B);
   const score=x=>(x.ctr*2)+(x.cpa?1000/x.cpa:0)+(x.pur*5)+(x.msg*2);
   const winner=score(a)>=score(b)?"A":"B";
   const row=(l,va,vb,fmt=fmtN,inv=false)=>{const wa=inv?va<vb:va>vb;return `<tr><td>${l}</td><td class="num ${wa?"":"muted"}">${wa?"🏆 ":""}${fmt(va)}</td><td class="num ${!wa?"":"muted"}">${!wa?"🏆 ":""}${fmt(vb)}</td></tr>`;};
   $("abOut").innerHTML=`<div class="card tablewrap"><h3>ผลเปรียบเทียบ — Winner: <span style="color:var(--accent)">${winner==="A"?esc(A[nk]):esc(B[nk])}</span> 🏆</h3>
     <table><thead><tr><th>Metric</th><th class="num">A: ${esc(A[nk])}</th><th class="num">B: ${esc(B[nk])}</th></tr></thead><tbody>
-    ${row("Spend",a.spend,b.spend,fmtB,true)}${row("Impressions",a.impr,b.impr)}${row("Clicks",a.clicks,b.clicks)}
-    ${row("CTR",a.ctr,b.ctr,fmtP)}${row("CPM",a.cpm,b.cpm,fmtB,true)}${row("ซื้อ",a.pur,b.pur)}${row("ทักแชท",a.msg,b.msg)}
-    ${row("CPA",a.cpa||1e12,b.cpa||1e12,v=>v>=1e12?"—":fmtB(v),true)}</tbody></table>
+    ${row("Spend",a.spend,b.spend,fmtB,true)}${row("Impressions",a.impr,b.impr)}${row("Clicks",a.clicks,b.clicks)}${row("Reach",a.reach,b.reach)}
+    ${row("CTR",a.ctr,b.ctr,fmtP)}${row("CPM",a.cpm,b.cpm,fmtB,true)}${row("Messaging Started",a.msg,b.msg)}
+    ${row("Purchases",a.pur,b.pur)}${row("Purchases Value",a.rev,b.rev,fmtB)}
+    ${row("Closing Rate",a.close===null?-1:a.close,b.close===null?-1:b.close,v=>v<0?"—":fmtP(v))}
+    ${row("CPA",a.cpa||1e12,b.cpa||1e12,v=>v>=1e12?"—":fmtB(v),true)}
+    ${row("Cost/Purchase",a.cpp===null?1e12:a.cpp,b.cpp===null?1e12:b.cpp,v=>v>=1e12?"—":fmtB(v),true)}
+    ${row("AOV",a.aov===null?-1:a.aov,b.aov===null?-1:b.aov,v=>v<0?"—":fmtB(v))}
+    ${row("ROAS",a.roas===null?-1:a.roas,b.roas===null?-1:b.roas,v=>v<0?"—":v.toFixed(2)+"x")}
+    </tbody></table>
     <div class="row mt"><button class="btn primary" onclick="abAI('${esc(A[nk]).replace(/'/g,"\\'")}','${esc(B[nk]).replace(/'/g,"\\'")}',${JSON.stringify(a).replace(/"/g,"&quot;")},${JSON.stringify(b).replace(/"/g,"&quot;")})">🤖 ให้ AI วิเคราะห์</button>
     <button class="btn" onclick="window.print()">🖨️ พิมพ์/บันทึก PDF</button></div>
     <div id="abAiOut" class="mt"></div></div>`;
@@ -1230,13 +1280,13 @@ PAGES.audience = async function(){
       <div class="card"><h3>💸 LOSING AUDIENCES</h3><div id="audLose"></div></div>
     </div>
     <div class="grid g2 mt">
-      <div class="card tablewrap"><h3>🛍 PURCHASES ตามช่วงอายุ</h3><div id="audPurAge"></div></div>
-      <div class="card tablewrap"><h3>🛍 PURCHASES ตามเพศ</h3><div id="audPurGen"></div></div>
+      <div class="card tablewrap"><h3>🛍 METRICS ตามช่วงอายุ</h3><div id="audPurAge"></div></div>
+      <div class="card tablewrap"><h3>🛍 METRICS ตามเพศ</h3><div id="audPurGen"></div></div>
     </div>
     <div id="audAiOut" class="mt"></div>`;
   const range=presetRange(S.preset);
   const [ag, dev]=await Promise.all([
-    mGETAll(`/${S.act}/insights`,{fields:"spend,impressions,clicks,ctr,actions,action_values",time_range:range,level:"account",breakdowns:"age,gender",action_breakdowns:"action_type"},"aud_ag_"+S.preset),
+    mGETAll(`/${S.act}/insights`,{fields:"spend,impressions,clicks,reach,ctr,cpm,actions,action_values",time_range:range,level:"account",breakdowns:"age,gender",action_breakdowns:"action_type"},"aud_ag_"+S.preset),
     mGETAll(`/${S.act}/insights`,{fields:"impressions,spend",time_range:range,level:"account",breakdowns:"impression_device"},"aud_dev_"+S.preset)
   ]);
   window._audAG=ag;
@@ -1254,24 +1304,22 @@ PAGES.audience = async function(){
   $("audWin").innerHTML=scored.slice(0,5).map(li).join("")||'<div class="empty small">ไม่มีข้อมูล conversion</div>';
   $("audLose").innerHTML=scored.slice(-5).reverse().map(li).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
 
-  const byAgePur={}, byGenPur={};
+  const byAgeRows={}, byGenRows={};
   ag.forEach(r=>{
-    const pur=purchases(r.actions), rev=purchaseValue(r.action_values);
-    if(!byAgePur[r.age]) byAgePur[r.age]={pur:0,rev:0};
-    byAgePur[r.age].pur+=pur; byAgePur[r.age].rev+=rev;
+    (byAgeRows[r.age]=byAgeRows[r.age]||[]).push(r);
     const g=r.gender==="male"?"ชาย":(r.gender==="female"?"หญิง":"ไม่ระบุ");
-    if(!byGenPur[g]) byGenPur[g]={pur:0,rev:0};
-    byGenPur[g].pur+=pur; byGenPur[g].rev+=rev;
+    (byGenRows[g]=byGenRows[g]||[]).push(r);
   });
   const purTable=obj=>{
-    const rows=Object.entries(obj).filter(([,v])=>v.pur>0||v.rev>0).sort((a,b)=>b[1].rev-a[1].rev);
-    if(!rows.length) return '<div class="empty small">ไม่มีข้อมูล purchase</div>';
-    return `<table><thead><tr><th>กลุ่ม</th><th class="num">Purchases</th><th class="num">Purchases Value</th></tr></thead><tbody>
-      ${rows.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${fmtN(v.pur)}</td><td class="num">${fmtB(v.rev)}</td></tr>`).join("")}
+    const rows=Object.entries(obj).map(([k,list])=>[k,aggregateInsights(list)]).filter(([,v])=>v.spend>0||purchases(v.actions)>0)
+      .sort((a,b)=>purchaseValue(b[1].action_values)-purchaseValue(a[1].action_values));
+    if(!rows.length) return '<div class="empty small">ไม่มีข้อมูล</div>';
+    return `<table><thead><tr><th>กลุ่ม</th>${FULL_METRIC_HEAD}</tr></thead><tbody>
+      ${rows.map(([k,v])=>`<tr><td>${esc(k)}</td>${fullMetricCells(v)}</tr>`).join("")}
       </tbody></table>`;
   };
-  $("audPurAge").innerHTML=purTable(byAgePur);
-  $("audPurGen").innerHTML=purTable(byGenPur);
+  $("audPurAge").innerHTML=purTable(byAgeRows);
+  $("audPurGen").innerHTML=purTable(byGenRows);
 };
 async function audAI(){
   $("audAiOut").innerHTML='<div class="card"><span class="spin"></span></div>';
@@ -1290,15 +1338,13 @@ PAGES.quality = async function(){
     <div class="muted small mt">Quality Score = (CloseRate×0.4)+(ROAS×0.3)+(1/CPP×0.3) — normalize เทียบภายในบัญชี • Close Rate = ซื้อ ÷ ทัก</div></div>`;
   const range=presetRange(S.preset);
   const camps=await mGETAll(`/${S.act}/insights`,{fields:INS_FIELDS+",campaign_name,campaign_id",time_range:range,level:"campaign",action_breakdowns:"action_type"},"q_"+S.preset);
-  const rows=camps.map(c=>{const sp=+c.spend||0,msg=messages(c.actions),pur=purchases(c.actions);
-    const val=(c.action_values||[]).find(v=>PURCHASE_TYPES.includes(v.action_type)); const rev=val?+val.value:0;
-    return {name:c.campaign_name,spend:sp,msg,pur,close:msg>0?pur/msg:null,roas:sp>0?rev/sp:0,cpp:pur>0?sp/pur:null};});
+  const rows=camps.map(c=>{const sp=+c.spend||0,close=closingRate(c.actions),rs=roas(sp,c.action_values),cpp=costPerPurchase(sp,c.actions);
+    return {c,name:c.campaign_name,close:close!==null?close/100:null,roas:rs||0,cpp};});
   const mx={close:Math.max(...rows.map(r=>r.close||0),0.0001),roas:Math.max(...rows.map(r=>r.roas),0.0001),icpp:Math.max(...rows.map(r=>r.cpp?1/r.cpp:0),0.0001)};
   rows.forEach(r=>{ r.score=(((r.close||0)/mx.close)*0.4+(r.roas/mx.roas)*0.3+((r.cpp?1/r.cpp:0)/mx.icpp)*0.3)*100; });
   rows.sort((a,b)=>b.score-a.score);
-  $("qBox").innerHTML=`<table><thead><tr><th>แคมเปญ</th><th class="num">Spend</th><th class="num">ทักแชท</th><th class="num">ซื้อจริง</th><th class="num">Close Rate</th><th class="num">ROAS</th><th class="num">Cost/Purchase</th><th class="num">Quality</th></tr></thead><tbody>`+
-    rows.map(r=>`<tr><td>${r.score>=60?"🟢":(r.score>=30?"🟡":"🔴")} ${esc(r.name)}</td><td class="num">${fmtB(r.spend)}</td><td class="num">${fmtN(r.msg)}</td><td class="num">${fmtN(r.pur)}</td>
-      <td class="num">${r.close!==null?fmtP(r.close*100):"—"}</td><td class="num">${r.roas?r.roas.toFixed(2)+"x":"—"}</td><td class="num">${r.cpp?fmtB(r.cpp):"—"}</td>
+  $("qBox").innerHTML=`<table><thead><tr><th>แคมเปญ</th>${FULL_METRIC_HEAD}<th class="num">Quality</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td>${r.score>=60?"🟢":(r.score>=30?"🟡":"🔴")} ${esc(r.name)}</td>${fullMetricCells(r.c)}
       <td class="num"><strong style="color:${r.score>=60?"var(--accent)":(r.score>=30?"var(--warn)":"var(--danger)")}">${r.score.toFixed(0)}</strong></td></tr>`).join("")+
     `</tbody></table>`;
 };
@@ -1315,26 +1361,25 @@ PAGES.creative = async function(){
     <div class="card mt tablewrap"><h3>🎬 CREATIVE METRICS ทุกชิ้นงาน</h3><div id="crBox"><span class="spin"></span></div></div>`;
   const range=presetRange(S.preset);
   const [ads,ins]=await Promise.all([adsWithCreatives(),
-    mGETAll(`/${S.act}/insights`,{fields:"ad_id,ad_name,spend,impressions,ctr,actions,action_values,video_play_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions",time_range:range,level:"ad",action_breakdowns:"action_type"},"cr_"+S.preset)]);
+    mGETAll(`/${S.act}/insights`,{fields:INS_FIELDS+",ad_id,ad_name,video_play_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions",time_range:range,level:"ad",action_breakdowns:"action_type"},"cr_"+S.preset)]);
   const adMap={}; ads.forEach(a=>adMap[a.id]=a);
   const vv=x=>x&&x[0]?+x[0].value:0;
   const rows=ins.map(i=>{const impr=+i.impressions||0,sp=+i.spend||0;
     const plays=vv(i.video_play_actions),s3=actVal(i.actions,"video_view");
-    const val=(i.action_values||[]).find(v=>PURCHASE_TYPES.includes(v.action_type));
-    return {id:i.ad_id,name:i.ad_name,spend:sp,ctr:+i.ctr||0,cpa:cpa(sp,i.actions),
-      roas:sp>0&&val? +val.value/sp : null, r3:impr>0?s3/impr*100:null, isVideo:plays>0,
+    return {id:i.ad_id,name:i.ad_name,raw:i,spend:sp,ctr:+i.ctr||0,cpa:cpa(sp,i.actions),
+      roas:roas(sp,i.action_values), r3:impr>0?s3/impr*100:null, isVideo:plays>0,
       p25:vv(i.video_p25_watched_actions),p50:vv(i.video_p50_watched_actions),p75:vv(i.video_p75_watched_actions),p100:vv(i.video_p100_watched_actions),plays};});
   rows.sort((a,b)=>b.ctr-a.ctr);
   const mini=r=>{const a=adMap[r.id];return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong><div class="muted small">CTR ${fmtP(r.ctr)} • ${fmtB(r.spend)} • CPA ${r.cpa?fmtB(r.cpa):"—"}</div></div></div>`;};
   const withData=rows.filter(r=>r.spend>0);
   $("crTop").innerHTML=withData.slice(0,4).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crLose").innerHTML=withData.slice(-4).reverse().map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
-  $("crBox").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th><th class="num">Spend</th><th class="num">CTR</th><th class="num">3s Play Rate</th><th class="num">Retention P25/50/75/100</th><th class="num">CPA</th><th class="num">ROAS</th></tr></thead><tbody>`+
+  $("crBox").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th>${FULL_METRIC_HEAD}<th class="num">3s Play Rate</th><th class="num">Retention P25/50/75/100</th></tr></thead><tbody>`+
     withData.map(r=>{const a=adMap[r.id];
       const ret=r.isVideo&&r.plays>0? [r.p25,r.p50,r.p75,r.p100].map(x=>Math.round(x/r.plays*100)+"%").join(" / ") : "—";
       return `<tr><td>${a?thumbHTML(a):""}</td><td>${esc(r.name)} ${r.isVideo?'<span class="tag">🎥 Video</span>':'<span class="tag pink">🖼️ Image</span>'}</td>
-      <td class="num">${fmtB(r.spend)}</td><td class="num">${fmtP(r.ctr)}</td><td class="num">${r.r3!==null&&r.isVideo?fmtP(r.r3):"—"}</td>
-      <td class="num small">${ret}</td><td class="num">${r.cpa?fmtB(r.cpa):"—"}</td><td class="num">${r.roas?r.roas.toFixed(2)+"x":"—"}</td></tr>`;}).join("")+`</tbody></table>`;
+      ${fullMetricCells(r.raw)}
+      <td class="num">${r.r3!==null&&r.isVideo?fmtP(r.r3):"—"}</td><td class="num small">${ret}</td></tr>`;}).join("")+`</tbody></table>`;
 };
 
 /* =====================================================================
@@ -1382,8 +1427,8 @@ PAGES.geo = async function(){
     </div>
     <div id="geoAiOut" class="mt"></div>`;
   const range=presetRange(S.preset);
-  const data=await mGETAll(`/${S.act}/insights`,{fields:"spend,impressions,clicks,ctr,actions",time_range:range,level:"account",breakdowns:"region",action_breakdowns:"action_type"},"geo_"+S.preset);
-  window._geo=data.map(r=>({region:r.region||"?",spend:+r.spend||0,ctr:+r.ctr||0,cpa:cpa(+r.spend,r.actions),res:purchases(r.actions)+messages(r.actions)})).sort((a,b)=>b.spend-a.spend);
+  const data=await mGETAll(`/${S.act}/insights`,{fields:INS_FIELDS,time_range:range,level:"account",breakdowns:"region",action_breakdowns:"action_type"},"geo_"+S.preset);
+  window._geo=data.map(r=>({region:r.region||"?",spend:+r.spend||0,ctr:+r.ctr||0,cpa:cpa(+r.spend,r.actions),res:purchases(r.actions)+messages(r.actions),raw:r})).sort((a,b)=>b.spend-a.spend);
   geoMetric(0);
 };
 function geoMetric(m){
@@ -1394,9 +1439,8 @@ function geoMetric(m){
   const val=r=>m===0?r.spend:(m===1?(r.cpa||0):(m===2?r.ctr:r.res));
   const mx=Math.max(...rows.map(val),0.0001);
   const fmt=v=>m===0?fmtB(v):(m===1?(v?fmtB(v):"—"):(m===2?fmtP(v):fmtN(v)));
-  $("geoBox").innerHTML=`<table><thead><tr><th>จังหวัด (Region)</th><th style="width:42%"></th><th class="num">Spend</th><th class="num">CTR</th><th class="num">CPA</th><th class="num">ผลลัพธ์</th></tr></thead><tbody>`+
-    rows.map(r=>`<tr><td>${esc(r.region)}</td><td><div class="geo-bar" style="width:${Math.max(2,val(r)/mx*100)}%"></div></td>
-      <td class="num">${fmtB(r.spend)}</td><td class="num">${fmtP(r.ctr)}</td><td class="num">${r.cpa?fmtB(r.cpa):"—"}</td><td class="num">${fmtN(r.res)}</td></tr>`).join("")+`</tbody></table>`;
+  $("geoBox").innerHTML=`<table><thead><tr><th>จังหวัด (Region)</th><th style="width:16%"></th>${FULL_METRIC_HEAD}</tr></thead><tbody>`+
+    rows.map(r=>`<tr><td>${esc(r.region)}</td><td><div class="geo-bar" style="width:${Math.max(2,val(r)/mx*100)}%"></div></td>${fullMetricCells(r.raw)}</tr>`).join("")+`</tbody></table>`;
 }
 async function geoAI(){
   $("geoAiOut").innerHTML='<div class="card"><span class="spin"></span></div>';
@@ -1549,12 +1593,15 @@ PAGES.weekly = async function(){
     <div id="wkList">${renderWeeklyList()}</div>`;
 };
 function renderWeeklyList(){
-  return S.reports.length? S.reports.map((r,i)=>`<div class="card mb"><div class="row spread">
+  return S.reports.length? S.reports.map((r,i)=>{
+    const kpis = r.raw ? metricKPIList(r.raw)
+      : [["SPEND",fmtB(r.spend)],["IMPRESSIONS",fmtN(r.impressions)],["CLICKS",fmtN(r.clicks)],["ผลลัพธ์",fmtN(r.results)]]; /* older reports saved before this field existed */
+    return `<div class="card mb"><div class="row spread">
       <h3>📅 รายงาน ${r.since} → ${r.until}</h3>
       <button class="btn sm danger" onclick="S.reports.splice(${i},1);LS.set('reports',S.reports);$('wkList').innerHTML=renderWeeklyList()">ลบ</button></div>
-    <div class="grid g4 mt">${[["SPEND",fmtB(r.spend)],["IMPRESSIONS",fmtN(r.impressions)],["CLICKS",fmtN(r.clicks)],["ผลลัพธ์",fmtN(r.results)]].map(([l,v])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val" style="font-size:17px">${v}</div></div>`).join("")}</div>
+    <div class="grid g4 mt">${kpis.map(([l,v])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val" style="font-size:17px">${v}</div></div>`).join("")}</div>
     ${r.ai?`<div class="ai-out mt">${mdLite(r.ai)}</div>`:""}
-    </div>`).join("") : '<div class="card"><div class="empty">ยังไม่มีรายงาน</div></div>';
+    </div>`;}).join("") : '<div class="card"><div class="empty">ยังไม่มีรายงาน</div></div>';
 }
 async function genWeekly(silent){
   try{
@@ -1566,7 +1613,7 @@ async function genWeekly(silent){
     let ai=null;
     if(S.aiKey){ try{ ai=await askAI("สรุปรายงานโฆษณารายสัปดาห์เป็นภาษาไทย กระชับ อ่านง่าย",
       `สัปดาห์ ${range.since} ถึง ${range.until}\nAccount: ${JSON.stringify({spend:acc.spend,impressions:acc.impressions,clicks:acc.clicks,ctr:acc.ctr})}\nCampaigns: ${JSON.stringify(camps.map(c=>({name:c.campaign_name,spend:+c.spend,ctr:+c.ctr,results:purchases(c.actions)+messages(c.actions)})))}\nสรุปภาพรวม + จุดเด่น + จุดต้องแก้`);}catch(e){} }
-    S.reports.unshift({...range,spend:+acc.spend||0,impressions:+acc.impressions||0,clicks:+acc.clicks||0,
+    S.reports.unshift({...range,raw:acc,spend:+acc.spend||0,impressions:+acc.impressions||0,clicks:+acc.clicks||0,
       results:purchases(acc.actions)+messages(acc.actions),ai,at:Date.now()});
     S.reports=S.reports.slice(0,20); LS.set("reports",S.reports);
     notify("📅 รายงานสัปดาห์พร้อมแล้ว",`${range.since} → ${range.until}`);
