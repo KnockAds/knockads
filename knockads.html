@@ -174,9 +174,37 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   .tablewrap{overflow-x:auto}
 }
 .tablewrap{overflow-x:auto}
+
+/* ---------- Auth gate (ระบบล็อกอินลูกค้า — แยกจาก Meta Token) ---------- */
+#authGate{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+#authGate.show{display:flex}
+.authbox{width:100%;max-width:360px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px 30px;box-shadow:0 20px 50px rgba(25,20,16,.14);text-align:center}
+.authbox .brand{font-size:22px;margin-bottom:4px;justify-content:center;display:flex}
+.authbox .authsub{color:var(--muted);font-size:12.5px;margin-bottom:22px}
+.authbox label{text-align:left}
+.authbox .btn.primary{width:100%;justify-content:center;margin-top:8px}
+#authErr{min-height:18px;color:var(--danger);font-size:12.5px;margin-top:10px}
+#authLoading{display:none;color:var(--muted);font-size:12.5px;margin-top:14px}
+.authbadge{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;cursor:pointer;margin-left:8px;transition:.15s}
+.authbadge:hover{border-color:var(--secondary);color:var(--secondary)}
 </style>
 </head>
 <body>
+<div id="authGate">
+  <div class="authbox">
+    <div class="brand">🥊 KNOCK<span>ADS</span></div>
+    <div class="authsub">เข้าสู่ระบบด้วยบัญชีที่ได้รับจากผู้ดูแล</div>
+    <form id="authForm" onsubmit="return doLogin(event)">
+      <label>Username</label>
+      <input id="authUser" autocomplete="username" placeholder="username">
+      <label>Password</label>
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••">
+      <button type="submit" class="btn primary" id="authBtn">เข้าสู่ระบบ</button>
+      <div id="authErr"></div>
+      <div id="authLoading"><span class="spin"></span> กำลังตรวจสอบ...</div>
+    </form>
+  </div>
+</div>
 <div id="app">
   <div id="topnav">
     <div id="topnavInner">
@@ -185,6 +213,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button id="menuBtn" onclick="toggleMobileNav()">☰ เมนู</button>
       <div id="acctSwitcher" class="acctsw" style="margin-left:14px"></div>
       <span id="connBadge" style="margin-left:8px">⬤ ยังไม่เชื่อมต่อ</span>
+      <span id="authBadge" class="authbadge" style="display:none" onclick="confirmLogout()"></span>
     </div>
   </div>
   <nav id="mobileNav"></nav>
@@ -248,6 +277,90 @@ document.addEventListener("click",e=>{
   if(DD.open!==null && !e.target.closest(".navgrp")){ DD.open=null; renderTopNav(); }
   if(ADSW.open && !e.target.closest(".acctsw")){ ADSW.open=false; renderAccountSwitcher(); }
 });
+
+/* ---------- Auth (ระบบล็อกอินลูกค้า — แยกจาก Meta Ads Token ของแต่ละคนโดยสิ้นเชิง) ---------- */
+const AUTH_API = "https://knockads-auth.tanapat0038zaza.workers.dev";
+const AUTH = {
+  token: LS.get("authToken",""),
+  user: LS.get("authUserInfo",null), // {username, role, displayName, expiresAt}
+};
+async function authFetch(path, body){
+  const headers={"Content-Type":"application/json"};
+  if(AUTH.token) headers["Authorization"]="Bearer "+AUTH.token;
+  let r;
+  try{ r = await fetch(AUTH_API+path,{method:"POST",headers,body:JSON.stringify(body||{})}); }
+  catch(e){ throw new Error("เชื่อมต่อระบบล็อกอินไม่ได้ ตรวจสอบอินเทอร์เน็ต หรือแจ้งผู้ดูแลระบบ"); }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!r.ok) throw new Error(j.error||"เชื่อมต่อระบบล็อกอินไม่สำเร็จ");
+  return j;
+}
+function setAuthSession(j){
+  AUTH.token=j.token;
+  AUTH.user={username:j.username, role:j.role, displayName:j.displayName, expiresAt:j.expiresAt};
+  LS.set("authToken",AUTH.token); LS.set("authUserInfo",AUTH.user);
+}
+function clearAuthSession(){
+  AUTH.token=""; AUTH.user=null; LS.del("authToken"); LS.del("authUserInfo");
+}
+function renderAuthBadge(){
+  const el=$("authBadge"); if(!el) return;
+  if(AUTH.user){ el.style.display=""; el.textContent="👤 "+(AUTH.user.displayName||AUTH.user.username)+" • ออกจากระบบ"; }
+  else el.style.display="none";
+}
+function confirmLogout(){
+  confirmAction("ออกจากระบบ", "คุณจะออกจากระบบ Knock Ads บนเครื่องนี้ (การตั้งค่า Meta Token ยังอยู่ ไม่หาย)", async ()=>{
+    clearAuthSession(); location.reload();
+  });
+}
+async function doLogin(e){
+  if(e) e.preventDefault();
+  const u=$("authUser").value.trim(), p=$("authPass").value;
+  $("authErr").textContent="";
+  if(!u||!p){ $("authErr").textContent="กรอก Username และ Password ให้ครบ"; return false; }
+  $("authBtn").disabled=true; $("authLoading").style.display="block";
+  try{
+    const j=await authFetch("/login",{username:u,password:p});
+    setAuthSession(j);
+    onAuthReady();
+  }catch(err){
+    $("authErr").textContent="❌ "+err.message;
+  }finally{
+    $("authBtn").disabled=false; $("authLoading").style.display="none";
+  }
+  return false;
+}
+async function verifySession(){
+  if(!AUTH.token) return false;
+  try{ const j=await authFetch("/verify",{}); setAuthSession(j); return true; }
+  catch(e){ clearAuthSession(); return false; }
+}
+function ensureAdminNav(){
+  if(AUTH.user && AUTH.user.role==="admin" && !NAV.some(n=>n.id==="admin")){
+    const i=NAV.findIndex(n=>n.id==="token");
+    NAV.splice(i<0?NAV.length:i,0,{id:"admin",ico:"🛡️",label:"จัดการลูกค้า"});
+  }
+}
+function onAuthReady(){
+  $("authGate").classList.remove("show");
+  ensureAdminNav();
+  renderTopNav(); renderMobileNav(); renderAuthBadge();
+  if(!S.token||!S.act){ go("token"); toast("👋 ยินดีต้อนรับ! เริ่มที่หน้า 🔑 Token → กดปุ่ม 📖 คู่มือ เพื่อสร้าง Token/Key ของตัวเอง (ทุกอย่างเก็บในเครื่องคุณเท่านั้น)","info",10000); }
+  else go(S.page||"dashboard");
+  if(window._authTimer) clearInterval(window._authTimer);
+  window._authTimer=setInterval(async()=>{
+    const ok=await verifySession();
+    if(!ok){ clearInterval(window._authTimer); $("authGate").classList.add("show"); $("authErr").textContent="เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่"; }
+    else renderAuthBadge();
+  }, 30*60*1000);
+}
+(async function bootAuth(){
+  $("authGate").classList.add("show");
+  if(AUTH.token){
+    const ok=await verifySession();
+    if(ok){ onAuthReady(); return; }
+  }
+  setTimeout(()=>{ const el=$("authUser"); if(el) el.focus(); },50);
+})();
 
 /* ---------- Click-to-sort table headers (ทุกตารางที่มี column เรียงจากมาก↔น้อย หรือ ก↔ฮ ได้) ---------- */
 function parseSortableNumber(text){
@@ -1889,9 +2002,10 @@ function tkRevoke(){
 }
 
 /* ---------- Init ---------- */
+/* หมายเหตุ: การเรียก go()/go("token"|"dashboard") ครั้งแรกถูกย้ายไปทำใน onAuthReady()
+   (ดูบล็อก "Auth" ด้านบน) เพื่อรอให้ผู้ใช้ล็อกอินผ่านก่อนเสมอ — renderTopNav/renderMobileNav/
+   connBadge/renderAccountSwitcher ยังเรียกตอนนี้ได้เลยเพราะแค่เตรียม UI เปล่าๆ ไม่ดึงข้อมูลลูกค้าใดๆ */
 renderTopNav(); renderMobileNav(); connBadge(); renderAccountSwitcher();
-if(!S.token||!S.act){ go("token"); toast("👋 ยินดีต้อนรับ! เริ่มที่หน้า 🔑 Token → กดปุ่ม 📖 คู่มือ เพื่อสร้าง Token/Key ของตัวเอง (ทุกอย่างเก็บในเครื่องคุณเท่านั้น)","info",10000); }
-else go("dashboard");
 </script>
 
 <script>
@@ -2696,6 +2810,142 @@ async function runSysCheck(){
   $("scSum").innerHTML=`<div class="ai-out" style="border-color:${fail?"var(--danger)":"rgba(46,204,113,.4)"}">
     <strong>สรุป: ${pass}/${total} ผ่าน</strong> • ล้มเหลว ${fail} • ข้าม ${skip}
     ${fail===0?"\n🎉 ระบบพร้อมใช้งานจริงทุกส่วนที่ตั้งค่าไว้":"\n⚠️ แก้รายการ ❌ ตามข้อความ แล้วรันตรวจซ้ำ (ดูปุ่ม 📖 คู่มือในหน้า Token ประกอบ)"}</div>`;
+}
+
+/* ---------- Admin: จัดการบัญชีลูกค้า (เห็นเฉพาะ role==='admin', server ก็เช็คสิทธิ์ซ้ำทุก request) ---------- */
+async function adminFetch(path, method, body){
+  const headers={"Content-Type":"application/json"};
+  if(AUTH.token) headers["Authorization"]="Bearer "+AUTH.token;
+  let r;
+  try{ r = await fetch(AUTH_API+path,{method,headers,body: body!==undefined?JSON.stringify(body):undefined}); }
+  catch(e){ throw new Error("เชื่อมต่อระบบล็อกอินไม่ได้ ตรวจสอบอินเทอร์เน็ต"); }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!r.ok) throw new Error(j.error||"คำขอไม่สำเร็จ");
+  return j;
+}
+function fmtExpiry(ms){ return ms? new Date(ms).toLocaleDateString("th-TH",{year:"numeric",month:"short",day:"numeric"}) : "ไม่มีวันหมดอายุ"; }
+function dateInputToMs(dateStr){ return dateStr? new Date(dateStr+"T23:59:59+07:00").getTime() : null; }
+function msToDateInput(ms){ if(!ms) return ""; const d=new Date(ms); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+PAGES.admin = async function(){
+  if(!AUTH.user || AUTH.user.role!=="admin"){
+    $("page").innerHTML='<div class="card"><div class="empty">🚫 หน้านี้สำหรับแอดมินเท่านั้น</div></div>'; return;
+  }
+  $("page").innerHTML=`<div class="card mb"><div class="row spread" style="align-items:center">
+      <h3 style="margin:0">🛡️ จัดการบัญชีลูกค้า</h3>
+      <button class="btn primary" onclick="adminOpenCreate()">+ เพิ่มลูกค้าใหม่</button>
+    </div></div>
+    <div class="card tablewrap" id="adminUsersBox"><div class="loadbox"><span class="spin"></span> กำลังโหลด...</div></div>`;
+  await adminRenderUsers();
+};
+
+async function adminRenderUsers(){
+  const box=$("adminUsersBox"); if(!box) return;
+  try{
+    const j=await adminFetch("/admin/users","GET");
+    const users=j.users||[];
+    if(!users.length){ box.innerHTML='<div class="empty">ยังไม่มีบัญชีลูกค้า — กด "+ เพิ่มลูกค้าใหม่" เพื่อเริ่มต้น</div>'; return; }
+    const now=Date.now();
+    box.innerHTML=`<table><thead><tr>
+        <th>Username</th><th>ชื่อที่แสดง</th><th>สิทธิ์</th><th>สถานะ</th><th>หมดอายุ</th><th>หมายเหตุ</th><th></th>
+      </tr></thead><tbody>
+      ${users.map(u=>{
+        const expired = u.expires_at && u.expires_at<now;
+        const statusCls = u.status==="active" ? (expired?"PAUSED":"ACTIVE") : "other";
+        const statusLbl = u.status==="active" ? (expired?"หมดอายุ":"ใช้งานอยู่") : "ระงับแล้ว";
+        return `<tr>
+          <td data-sort="${esc(u.username)}"><strong>${esc(u.username)}</strong>${u.role==="admin"?' <span class="tag pink">แอดมิน</span>':""}</td>
+          <td>${esc(u.display_name||"—")}</td>
+          <td>${u.role==="admin"?"แอดมิน":"ลูกค้า"}</td>
+          <td><span class="status ${statusCls}">${statusLbl}</span></td>
+          <td>${esc(fmtExpiry(u.expires_at))}</td>
+          <td class="small" style="color:var(--muted)">${esc(u.note||"—")}</td>
+          <td class="row" style="gap:4px;flex-wrap:nowrap">
+            <button class="btn" style="padding:6px 10px;font-size:12px" onclick="adminOpenEdit('${esc(u.username)}')">แก้ไข</button>
+            ${u.username!==AUTH.user.username ? (u.status==="active"
+              ? `<button class="btn" style="padding:6px 10px;font-size:12px" onclick="adminToggleStatus('${esc(u.username)}','disabled')">ระงับ</button>`
+              : `<button class="btn" style="padding:6px 10px;font-size:12px" onclick="adminToggleStatus('${esc(u.username)}','active')">เปิดใช้</button>`) : ""}
+            ${u.username!==AUTH.user.username ? `<button class="btn danger" style="padding:6px 10px;font-size:12px" onclick="adminDeleteUser('${esc(u.username)}')">ลบ</button>` : ""}
+          </td>
+        </tr>`;
+      }).join("")}
+      </tbody></table>`;
+  }catch(e){
+    box.innerHTML=`<div class="empty">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+function adminOpenCreate(){
+  openModal(`<h3>+ เพิ่มลูกค้าใหม่</h3>
+    <label>Username (a-z 0-9 _ . - เท่านั้น)</label><input id="acUser" placeholder="เช่น somchai">
+    <label>ชื่อที่แสดง</label><input id="acName" placeholder="เช่น ร้านสมชายค้าขาย">
+    <label>Password (เว้นว่าง = สุ่มให้อัตโนมัติ)</label><input id="acPass" type="text" placeholder="อย่างน้อย 8 ตัวอักษร">
+    <label>วันหมดอายุ (เว้นว่าง = ไม่มีวันหมดอายุ)</label><input id="acExp" type="date">
+    <label>หมายเหตุ</label><input id="acNote" placeholder="เช่น แพ็กเกจ 6 เดือน">
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn primary" id="acGo">สร้างบัญชี</button>
+    </div>`);
+  $("acGo").onclick = async ()=>{
+    const username=$("acUser").value.trim().toLowerCase();
+    if(!/^[a-z0-9_.\-]{3,32}$/.test(username)) return toast("Username ต้องเป็น a-z 0-9 _ . - ยาว 3-32 ตัว","warn");
+    const btn=$("acGo"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> กำลังสร้าง...';
+    try{
+      const body={username, displayName:$("acName").value.trim()||username, note:$("acNote").value.trim()};
+      const pass=$("acPass").value.trim(); if(pass) body.password=pass;
+      const exp=$("acExp").value; if(exp) body.expiresAt=dateInputToMs(exp);
+      const j=await adminFetch("/admin/users","POST",body);
+      closeModal();
+      if(j.password) openModal(`<h3>✅ สร้างบัญชีสำเร็จ</h3>
+        <div class="small" style="line-height:1.9;margin:10px 0">
+          บันทึกรหัสผ่านนี้ไว้ให้ลูกค้า — <strong>จะไม่แสดงซ้ำอีกครั้ง</strong><br>
+          Username: <strong>${esc(username)}</strong><br>
+          Password: <strong style="font-size:16px;letter-spacing:1px">${esc(j.password)}</strong>
+        </div>
+        <div class="row" style="justify-content:flex-end"><button class="btn primary" onclick="closeModal()">ปิด</button></div>`);
+      else toast("✅ สร้างบัญชีสำเร็จ","ok");
+      adminRenderUsers();
+    }catch(e){ btn.disabled=false; btn.innerHTML="สร้างบัญชี"; toast("❌ "+esc(e.message),"err",6000); }
+  };
+}
+
+function adminOpenEdit(username){
+  adminFetch("/admin/users","GET").then(j=>{
+    const u=(j.users||[]).find(x=>x.username===username); if(!u) return;
+    openModal(`<h3>แก้ไข: ${esc(username)}</h3>
+      <label>ชื่อที่แสดง</label><input id="aeName" value="${esc(u.display_name||"")}">
+      <label>วันหมดอายุ (เว้นว่าง = ไม่มีวันหมดอายุ)</label><input id="aeExp" type="date" value="${msToDateInput(u.expires_at)}">
+      <label>หมายเหตุ</label><input id="aeNote" value="${esc(u.note||"")}">
+      <label>ตั้งรหัสผ่านใหม่ (เว้นว่าง = ไม่เปลี่ยน)</label><input id="aePass" type="text" placeholder="อย่างน้อย 8 ตัวอักษร">
+      <div class="row" style="justify-content:flex-end;margin-top:16px">
+        <button class="btn" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn primary" id="aeGo">บันทึก</button>
+      </div>`);
+    $("aeGo").onclick = async ()=>{
+      const btn=$("aeGo"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> กำลังบันทึก...';
+      try{
+        const body={displayName:$("aeName").value.trim(), note:$("aeNote").value.trim(), expiresAt: $("aeExp").value? dateInputToMs($("aeExp").value) : null};
+        const pass=$("aePass").value.trim(); if(pass){ if(pass.length<8) throw new Error("รหัสผ่านต้องอย่างน้อย 8 ตัวอักษร"); body.password=pass; }
+        await adminFetch("/admin/users/"+encodeURIComponent(username),"PATCH",body);
+        closeModal(); toast("✅ บันทึกแล้ว","ok"); adminRenderUsers();
+      }catch(e){ btn.disabled=false; btn.innerHTML="บันทึก"; toast("❌ "+esc(e.message),"err",6000); }
+    };
+  }).catch(e=>toast("❌ "+esc(e.message),"err",6000));
+}
+
+function adminToggleStatus(username, newStatus){
+  const verb = newStatus==="active" ? "เปิดใช้งาน" : "ระงับการใช้งาน";
+  confirmAction(verb+"บัญชี "+username, newStatus==="disabled" ? "ลูกค้าจะเข้าสู่ระบบไม่ได้ทันทีจนกว่าจะเปิดใช้งานอีกครั้ง" : "ลูกค้าจะกลับมาเข้าสู่ระบบได้ตามปกติ", async ()=>{
+    await adminFetch("/admin/users/"+encodeURIComponent(username),"PATCH",{status:newStatus});
+    toast("✅ "+verb+"แล้ว","ok"); adminRenderUsers();
+  });
+}
+
+function adminDeleteUser(username){
+  confirmAction("ลบบัญชี "+username, "ลบแล้วลูกค้าคนนี้จะเข้าสู่ระบบไม่ได้อีก และกู้คืนไม่ได้ ต้องสร้างบัญชีใหม่หากต้องการให้ใช้งานอีก", async ()=>{
+    await adminFetch("/admin/users/"+encodeURIComponent(username),"DELETE");
+    toast("🗑️ ลบบัญชีแล้ว","ok"); adminRenderUsers();
+  });
 }
 </script>
 </body>
