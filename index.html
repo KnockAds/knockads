@@ -112,6 +112,11 @@ td{padding:9px 10px;border-bottom:1px solid rgba(25,20,16,.08);vertical-align:mi
 tr:hover td{background:rgba(255,201,60,.06)}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 th.num{text-align:right}
+th.sortable{cursor:pointer;user-select:none;transition:color .12s}
+th.sortable:hover{color:var(--secondary)}
+th.sortable .sort-arrow{display:inline-block;margin-left:4px;font-size:9px;opacity:.35}
+th.sortable.sort-asc,th.sortable.sort-desc{color:var(--secondary)}
+th.sortable.sort-asc .sort-arrow,th.sortable.sort-desc .sort-arrow{opacity:1}
 .status{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;letter-spacing:.3px}
 .status.ACTIVE{background:rgba(46,125,79,.13);color:var(--accent)}
 .status.PAUSED{background:rgba(181,101,29,.13);color:var(--warn)}
@@ -243,6 +248,55 @@ document.addEventListener("click",e=>{
   if(DD.open!==null && !e.target.closest(".navgrp")){ DD.open=null; renderTopNav(); }
   if(ADSW.open && !e.target.closest(".acctsw")){ ADSW.open=false; renderAccountSwitcher(); }
 });
+
+/* ---------- Click-to-sort table headers (ทุกตารางที่มี column เรียงจากมาก↔น้อย หรือ ก↔ฮ ได้) ---------- */
+function parseSortableNumber(text){
+  const t=(text||"").trim();
+  if(t===""||t==="—"||t==="-") return null;
+  const n=parseFloat(t.replace(/[^0-9.\-]/g,""));
+  return isNaN(n)? null : n;
+}
+function sortTableByHeader(table, th){
+  const headRow=th.parentElement;
+  const idx=[...headRow.children].indexOf(th);
+  const isNum=th.classList.contains("num");
+  let dir=th.getAttribute("data-dir");
+  dir = dir==="asc" ? "desc" : (dir==="desc" ? "asc" : (isNum?"desc":"asc"));
+  headRow.querySelectorAll("th").forEach(h=>{ h.removeAttribute("data-dir"); h.classList.remove("sort-asc","sort-desc"); });
+  th.setAttribute("data-dir",dir); th.classList.add(dir==="asc"?"sort-asc":"sort-desc");
+  const tbody=table.tBodies[0]; if(!tbody) return;
+  const rows=[...tbody.rows];
+  const dataRows=rows.filter(r=>r.cells.length>1);
+  const otherRows=rows.filter(r=>r.cells.length<=1); /* colspan "ไม่พบข้อมูล" placeholder rows */
+  dataRows.sort((ra,rb)=>{
+    const ca=ra.cells[idx], cb=rb.cells[idx]; if(!ca||!cb) return 0;
+    if(isNum){
+      const inf = dir==="asc" ? Infinity : -Infinity;
+      let va=parseSortableNumber(ca.textContent); va = va===null? inf : va;
+      let vb=parseSortableNumber(cb.textContent); vb = vb===null? inf : vb;
+      return dir==="asc" ? va-vb : vb-va;
+    } else {
+      const va=(ca.getAttribute("data-sort")||ca.textContent).trim();
+      const vb=(cb.getAttribute("data-sort")||cb.textContent).trim();
+      return dir==="asc" ? va.localeCompare(vb,"th") : vb.localeCompare(va,"th");
+    }
+  });
+  dataRows.forEach(r=>tbody.appendChild(r));
+  otherRows.forEach(r=>tbody.appendChild(r));
+}
+function initSortableTables(root){
+  (root||document).querySelectorAll("table:not(.hm):not(.sort-ready)").forEach(table=>{
+    if(!table.tHead || !table.tBodies[0]) return;
+    table.classList.add("sort-ready");
+    [...table.tHead.rows[0].cells].forEach(th=>{
+      if(!th.textContent.trim()) return; /* ข้ามหัวคอลัมน์ที่ว่าง/เป็นแค่ไอคอน */
+      th.classList.add("sortable");
+      th.insertAdjacentHTML("beforeend",'<span class="sort-arrow">⇅</span>');
+      th.addEventListener("click",()=>sortTableByHeader(table,th));
+    });
+  });
+}
+new MutationObserver(()=>initSortableTables($("page"))).observe($("page"),{childList:true,subtree:true});
 /* Confirmation dialog — every write action must pass through here */
 function confirmAction(title, detailsHTML, onConfirm){
   openModal(`<h3>⚠️ ${esc(title)}</h3>
@@ -748,7 +802,7 @@ PAGES.campaigns = async function(){
     const i=insMap[c.id]||{}; const _cpa=cpa(+i.spend||0,i.actions);
     const sig=i.spend?signal({ctr:i.ctr,_cpa},avg):"";
     return `<tr style="cursor:pointer" onclick="campDetail('${c.id}','${esc(c.name).replace(/'/g,"\\'")}')">
-      <td>${sig} <strong>${esc(c.name)}</strong><div class="muted small">${esc(c.objective||"")}</div></td>
+      <td data-sort="${esc(c.name)}">${sig} <strong>${esc(c.name)}</strong><div class="muted small">${esc(c.objective||"")}</div></td>
       <td><span class="status ${c.effective_status==="ACTIVE"?"ACTIVE":(c.effective_status==="PAUSED"?"PAUSED":"other")}">${esc(c.effective_status)}</span></td>
       ${fullMetricCells(i)}</tr>`;
   }).join("");
@@ -776,7 +830,7 @@ async function campDetail(cid, cname){
     .map(([l,v])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join("");
   const avg=accAvg(adIns);
   const mkRows=(list,nameKey)=>list.map(i=>{const _cpa=cpa(+i.spend||0,i.actions);
-    return `<tr><td>${signal({ctr:i.ctr,_cpa},avg)} ${esc(i[nameKey])}</td>${fullMetricCells(i)}</tr>`;}).join("");
+    return `<tr><td data-sort="${esc(i[nameKey])}">${signal({ctr:i.ctr,_cpa},avg)} ${esc(i[nameKey])}</td>${fullMetricCells(i)}</tr>`;}).join("");
   const head=`<thead><tr><th>ชื่อ</th>${FULL_METRIC_HEAD}</tr></thead>`;
   $("cdAdsets").innerHTML=`<table>${head}<tbody>${mkRows(asIns,"adset_name")||'<tr><td colspan="14" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
   $("cdAds").innerHTML=`<table>${head}<tbody>${mkRows(adIns,"ad_name")||'<tr><td colspan="14" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>'}</tbody></table>`;
@@ -800,7 +854,7 @@ PAGES.ads = async function(){
   const rows=window._adsData.map((a,ix)=>{
     const i=a.ins, closable=a.sig==="🔴";
     return `<tr><td>${thumbHTML(a)}</td>
-      <td><span class="sig">${a.sig}</span> <strong>${esc(a.name)}</strong>${closable?' <span class="tag pink">ควรปิด</span>':''}
+      <td data-sort="${esc(a.name)}"><span class="sig">${a.sig}</span> <strong>${esc(a.name)}</strong>${closable?' <span class="tag pink">ควรปิด</span>':''}
         <div class="muted small">${esc(a.id)}</div></td>
       <td><span class="status ${a.effective_status==="ACTIVE"?"ACTIVE":(a.effective_status==="PAUSED"?"PAUSED":"other")}">${esc(a.effective_status)}</span></td>
       ${fullMetricCells(i)}
@@ -1344,7 +1398,7 @@ PAGES.quality = async function(){
   rows.forEach(r=>{ r.score=(((r.close||0)/mx.close)*0.4+(r.roas/mx.roas)*0.3+((r.cpp?1/r.cpp:0)/mx.icpp)*0.3)*100; });
   rows.sort((a,b)=>b.score-a.score);
   $("qBox").innerHTML=`<table><thead><tr><th>แคมเปญ</th>${FULL_METRIC_HEAD}<th class="num">Quality</th></tr></thead><tbody>`+
-    rows.map(r=>`<tr><td>${r.score>=60?"🟢":(r.score>=30?"🟡":"🔴")} ${esc(r.name)}</td>${fullMetricCells(r.c)}
+    rows.map(r=>`<tr><td data-sort="${esc(r.name)}">${r.score>=60?"🟢":(r.score>=30?"🟡":"🔴")} ${esc(r.name)}</td>${fullMetricCells(r.c)}
       <td class="num"><strong style="color:${r.score>=60?"var(--accent)":(r.score>=30?"var(--warn)":"var(--danger)")}">${r.score.toFixed(0)}</strong></td></tr>`).join("")+
     `</tbody></table>`;
 };
@@ -1377,7 +1431,7 @@ PAGES.creative = async function(){
   $("crBox").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th>${FULL_METRIC_HEAD}<th class="num">3s Play Rate</th><th class="num">Retention P25/50/75/100</th></tr></thead><tbody>`+
     withData.map(r=>{const a=adMap[r.id];
       const ret=r.isVideo&&r.plays>0? [r.p25,r.p50,r.p75,r.p100].map(x=>Math.round(x/r.plays*100)+"%").join(" / ") : "—";
-      return `<tr><td>${a?thumbHTML(a):""}</td><td>${esc(r.name)} ${r.isVideo?'<span class="tag">🎥 Video</span>':'<span class="tag pink">🖼️ Image</span>'}</td>
+      return `<tr><td>${a?thumbHTML(a):""}</td><td data-sort="${esc(r.name)}">${esc(r.name)} ${r.isVideo?'<span class="tag">🎥 Video</span>':'<span class="tag pink">🖼️ Image</span>'}</td>
       ${fullMetricCells(r.raw)}
       <td class="num">${r.r3!==null&&r.isVideo?fmtP(r.r3):"—"}</td><td class="num small">${ret}</td></tr>`;}).join("")+`</tbody></table>`;
 };
