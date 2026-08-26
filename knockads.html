@@ -280,6 +280,7 @@ document.addEventListener("click",e=>{
 
 /* ---------- Auth (ระบบล็อกอินลูกค้า — แยกจาก Meta Ads Token ของแต่ละคนโดยสิ้นเชิง) ---------- */
 const AUTH_API = "https://knockads-auth.tanapat0038zaza.workers.dev";
+const APP_URL = "https://knockads.github.io/knockads/";
 const AUTH = {
   token: LS.get("authToken",""),
   user: LS.get("authUserInfo",null), // {username, role, displayName, expiresAt}
@@ -2875,6 +2876,39 @@ async function adminRenderUsers(){
   }
 }
 
+function copyToClipboard(text){
+  const done = ()=> toast("📋 คัดลอกแล้ว — นำไปวางส่งลูกค้าได้เลย","ok",2500);
+  const fail = ()=> toast("❌ คัดลอกไม่สำเร็จ กรุณาคัดลอกด้วยตัวเอง","err",4500);
+  const fallback = ()=>{
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      done();
+    }catch(e){ fail(); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  }else fallback();
+}
+
+function openCredentialsModal(username, password, title){
+  const msg = `🥊 KNOCK ADS — บัญชีเข้าใช้งานของคุณ\n\nลิงก์เข้าใช้งาน: ${APP_URL}\nUsername: ${username}\nPassword: ${password}\n\nกรุณาเก็บรหัสผ่านนี้ไว้เป็นความลับ`;
+  openModal(`<h3>✅ ${esc(title||"พร้อมส่งให้ลูกค้า")}</h3>
+    <div class="small" style="line-height:1.9;margin:10px 0">
+      บันทึกข้อมูลนี้ไว้ให้ลูกค้า — <strong>จะไม่แสดงรหัสผ่านซ้ำอีกครั้ง</strong><br>
+      ลิงก์เข้าใช้งาน: <strong>${esc(APP_URL)}</strong><br>
+      Username: <strong>${esc(username)}</strong><br>
+      Password: <strong style="font-size:16px;letter-spacing:1px">${esc(password)}</strong>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeModal()">ปิด</button>
+      <button class="btn primary" id="credCopyAll">📋 คัดลอกทั้งหมด (ลิงก์ + Username + Password)</button>
+    </div>`);
+  $("credCopyAll").onclick = ()=> copyToClipboard(msg);
+}
+
 function adminOpenCreate(){
   openModal(`<h3>+ เพิ่มลูกค้าใหม่</h3>
     <label>Username (a-z 0-9 _ . - เท่านั้น)</label><input id="acUser" placeholder="เช่น somchai">
@@ -2896,13 +2930,8 @@ function adminOpenCreate(){
       const exp=$("acExp").value; if(exp) body.expiresAt=dateInputToMs(exp);
       const j=await adminFetch("/admin/users","POST",body);
       closeModal();
-      if(j.password) openModal(`<h3>✅ สร้างบัญชีสำเร็จ</h3>
-        <div class="small" style="line-height:1.9;margin:10px 0">
-          บันทึกรหัสผ่านนี้ไว้ให้ลูกค้า — <strong>จะไม่แสดงซ้ำอีกครั้ง</strong><br>
-          Username: <strong>${esc(username)}</strong><br>
-          Password: <strong style="font-size:16px;letter-spacing:1px">${esc(j.password)}</strong>
-        </div>
-        <div class="row" style="justify-content:flex-end"><button class="btn primary" onclick="closeModal()">ปิด</button></div>`);
+      const finalPass = pass || j.password;
+      if(finalPass) openCredentialsModal(username, finalPass, "สร้างบัญชีสำเร็จ");
       else toast("✅ สร้างบัญชีสำเร็จ","ok");
       adminRenderUsers();
     }catch(e){ btn.disabled=false; btn.innerHTML="สร้างบัญชี"; toast("❌ "+esc(e.message),"err",6000); }
@@ -2927,7 +2956,10 @@ function adminOpenEdit(username){
         const body={displayName:$("aeName").value.trim(), note:$("aeNote").value.trim(), expiresAt: $("aeExp").value? dateInputToMs($("aeExp").value) : null};
         const pass=$("aePass").value.trim(); if(pass){ if(pass.length<8) throw new Error("รหัสผ่านต้องอย่างน้อย 8 ตัวอักษร"); body.password=pass; }
         await adminFetch("/admin/users/"+encodeURIComponent(username),"PATCH",body);
-        closeModal(); toast("✅ บันทึกแล้ว","ok"); adminRenderUsers();
+        closeModal();
+        if(pass) openCredentialsModal(username, pass, "ตั้งรหัสผ่านใหม่สำเร็จ");
+        else toast("✅ บันทึกแล้ว","ok");
+        adminRenderUsers();
       }catch(e){ btn.disabled=false; btn.innerHTML="บันทึก"; toast("❌ "+esc(e.message),"err",6000); }
     };
   }).catch(e=>toast("❌ "+esc(e.message),"err",6000));
