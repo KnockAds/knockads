@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือ Knock Ads</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#FFFFFF;
+    --surface:#FFFFFF;
+    --surface-2:#FFF6D9;
+    --ink:#3B2C0F;
+    --ink-muted:#93794A;
+    --border:rgba(59,44,15,.14);
+    --border-strong:rgba(59,44,15,.26);
+    --accent:#B8790A;
+    --accent-ink:#3B2C0F;
+    --gold:#FFC93C;
+    --gold-soft:#FFF3C4;
+    --good:#1F8A55;
+    --good-soft:#E4F5EC;
+    --warn:#C2540C;
+    --warn-soft:#FDECD9;
+    --danger:#B3241F;
+    --danger-soft:#FCE9E5;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Prompt', 'Noto Sans Thai', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#20180A;
+      --surface:#2B2110;
+      --surface-2:#3A2C11;
+      --ink:#FDF3D9;
+      --ink-muted:#C9AF77;
+      --border:rgba(255,225,150,.16);
+      --border-strong:rgba(255,225,150,.28);
+      --accent:#FFC93C;
+      --accent-ink:#2B2110;
+      --gold:#FFD666;
+      --gold-soft:#4A3810;
+      --good:#4BD98A;
+      --good-soft:#163825;
+      --warn:#FFA15C;
+      --warn-soft:#452710;
+      --danger:#FF7B72;
+      --danger-soft:#421C18;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#20180A;
+    --surface:#2B2110;
+    --surface-2:#3A2C11;
+    --ink:#FDF3D9;
+    --ink-muted:#C9AF77;
+    --border:rgba(255,225,150,.16);
+    --border-strong:rgba(255,225,150,.28);
+    --accent:#FFC93C;
+    --accent-ink:#2B2110;
+    --gold:#FFD666;
+    --gold-soft:#4A3810;
+    --good:#4BD98A;
+    --good-soft:#163825;
+    --warn:#FFA15C;
+    --warn-soft:#452710;
+    --danger:#FF7B72;
+    --danger-soft:#421C18;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.7;
+  }
+  ::selection{ background:var(--gold-soft); color:var(--ink); }
+  a{ color:var(--accent); text-decoration-thickness:1.5px; text-underline-offset:2px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  code, .kbd{
+    font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:5px; padding:.08em .45em;
+    color:var(--ink);
+  }
+  img,svg{max-width:100%}
+
+  /* ---- shell layout ---- */
+  .shell{ max-width:1180px; margin:0 auto; padding:0 24px 120px; }
+  header.top{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    border-bottom:1px solid var(--border);
+  }
+  .top-inner{
+    max-width:1180px; margin:0 auto; padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .brand{ display:flex; align-items:baseline; gap:8px; font-weight:800; font-size:1.05rem; letter-spacing:.02em; }
+  .brand .k{ color:var(--ink); }
+  .brand .ads{ color:var(--accent); }
+  .brand-sub{ color:var(--ink-muted); font-weight:400; font-size:.86rem; }
+  .top-link{
+    font-size:.86rem; font-weight:600; border:1px solid var(--border-strong);
+    padding:8px 14px; border-radius:999px; white-space:nowrap;
+  }
+  .top-link:hover{ background:var(--surface-2); }
+
+  .layout{ display:grid; grid-template-columns:220px minmax(0,1fr); gap:56px; padding-top:44px; }
+  @media (max-width:880px){ .layout{ grid-template-columns:1fr; gap:28px; } .toc{ display:none; } }
+
+  /* ---- TOC ---- */
+  .toc{ position:sticky; top:80px; align-self:start; font-size:.86rem; }
+  .toc-label{ text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; color:var(--ink-muted); font-weight:600; margin-bottom:10px; }
+  .toc a{
+    display:block; color:var(--ink-muted); text-decoration:none; padding:5px 0 5px 12px;
+    border-left:2px solid var(--border); margin-bottom:1px;
+  }
+  .toc a:hover{ color:var(--ink); border-left-color:var(--border-strong); }
+
+  /* ---- intro / hero ---- */
+  .kicker{ color:var(--accent); font-weight:700; font-size:.82rem; letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
+  h1{ font-size:2.5rem; font-weight:800; line-height:1.18; margin:0 0 18px; text-wrap:balance; }
+  .lede{ font-size:1.12rem; color:var(--ink-muted); max-width:60ch; margin:0 0 28px; }
+  .status-row{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:44px; }
+  .pill{
+    display:inline-flex; align-items:center; gap:7px; font-size:.84rem; font-weight:600;
+    padding:7px 14px; border-radius:999px; border:1px solid transparent;
+  }
+  .pill.good{ background:var(--good-soft); color:var(--good); }
+  .pill.warn{ background:var(--warn-soft); color:var(--warn); }
+  .pill.neutral{ background:var(--surface-2); color:var(--ink-muted); border-color:var(--border); }
+
+  section{ margin-bottom:64px; scroll-margin-top:84px; }
+  h2{ font-size:1.55rem; font-weight:700; margin:0 0 6px; text-wrap:balance; }
+  .section-sub{ color:var(--ink-muted); margin:0 0 26px; max-width:64ch; font-size:.98rem; }
+  h3{ font-size:1.12rem; font-weight:700; margin:0 0 8px; }
+  p{ margin:0 0 14px; max-width:68ch; }
+  ul,ol{ padding-left:1.3em; margin:0 0 14px; max-width:66ch; }
+  li{ margin-bottom:6px; }
+
+  /* ---- verdict card ---- */
+  .verdict{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:28px 30px; display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:start;
+    margin-bottom:16px;
+  }
+  .verdict .mark{
+    width:46px;height:46px;border-radius:50%; background:var(--good-soft); color:var(--good);
+    display:flex;align-items:center;justify-content:center; font-size:1.3rem; font-weight:800; flex-shrink:0;
+  }
+  .verdict h3{ margin-bottom:8px; }
+  .verdict p:last-child{ margin-bottom:0; }
+
+  /* ---- step cards ---- */
+  .steps{ display:flex; flex-direction:column; gap:0; }
+  .step{
+    display:grid; grid-template-columns:44px 1fr; gap:20px;
+    padding:26px 0; border-top:1px solid var(--border);
+  }
+  .step:last-child{ padding-bottom:0; }
+  .step-num{
+    width:44px;height:44px;border-radius:12px; background:var(--gold-soft); border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center; font-family:var(--mono); font-weight:700; font-size:1rem;
+    color:var(--accent);
+  }
+  .step h3{ margin-bottom:8px; }
+  .step .field{
+    display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px;
+  }
+  .tag{
+    font-family:var(--mono); font-size:.78rem; background:var(--gold-soft); color:var(--accent); border:1px solid var(--border);
+    padding:3px 9px; border-radius:6px; font-weight:500;
+  }
+  a.codelink{
+    font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:5px; padding:.08em .45em;
+    color:var(--accent); text-decoration:none; font-weight:500;
+  }
+  a.codelink:hover{ text-decoration:underline; border-color:var(--border-strong); }
+
+  /* ---- copy chips / share box ---- */
+  .copyrow{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0 14px;
+  }
+  .copyrow .linkurl{
+    font-family:var(--mono); font-size:.82rem; background:var(--surface-2); color:var(--accent);
+    border:1px solid var(--border); border-radius:6px; padding:5px 10px; text-decoration:none; font-weight:500;
+  }
+  .copyrow .linkurl:hover{ border-color:var(--border-strong); text-decoration:underline; }
+  .copybtn{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.8rem; font-weight:600;
+    background:var(--gold-soft); color:var(--accent-ink); border:1px solid var(--border-strong); border-radius:6px;
+    padding:5px 11px; cursor:pointer; line-height:1.4;
+  }
+  .copybtn:hover{ background:var(--gold); }
+  .copybtn svg{ width:13px; height:13px; flex-shrink:0; }
+  .copybtn.is-copied{ background:var(--good-soft); color:var(--good); border-color:color-mix(in srgb, var(--good) 35%, transparent); }
+
+  /* ---- callouts ---- */
+  .callout{
+    border-radius:12px; padding:18px 20px; margin:18px 0; border:1px solid transparent;
+    max-width:68ch;
+  }
+  .callout p:last-child{ margin-bottom:0; }
+  .callout-label{ font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; display:block; }
+  .callout.danger{ background:var(--danger-soft); border-color:color-mix(in srgb, var(--danger) 25%, transparent); }
+  .callout.danger .callout-label{ color:var(--danger); }
+  .callout.warn{ background:var(--warn-soft); border-color:color-mix(in srgb, var(--warn) 25%, transparent); }
+  .callout.warn .callout-label{ color:var(--warn); }
+  .callout.good{ background:var(--good-soft); border-color:color-mix(in srgb, var(--good) 25%, transparent); }
+  .callout.good .callout-label{ color:var(--good); }
+
+  /* ---- feature grid ---- */
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px;
+  }
+  .card h3{ font-size:1rem; margin-bottom:6px; }
+  .card p{ font-size:.92rem; color:var(--ink-muted); margin-bottom:0; max-width:none; }
+
+  /* ---- nav map table ---- */
+  .navmap{ border:1px solid var(--border); border-radius:14px; overflow:hidden; margin:10px 0 6px; }
+  .navmap-row{ display:grid; grid-template-columns:180px 1fr; border-top:1px solid var(--border); }
+  .navmap-row:first-child{ border-top:none; }
+  .navmap-row > div{ padding:14px 18px; }
+  .navmap-row .menu{ background:var(--surface-2); font-weight:600; font-size:.9rem; }
+  .navmap-row .items{ font-size:.9rem; color:var(--ink-muted); }
+  .navmap-row .items b{ color:var(--ink); font-weight:600; }
+
+  /* ---- FAQ ---- */
+  details{
+    border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:10px;
+    background:var(--surface);
+  }
+  details[open]{ border-color:var(--border-strong); }
+  summary{
+    cursor:pointer; font-weight:600; font-size:.98rem; list-style:none;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary::after{
+    content:"+"; font-family:var(--mono); font-size:1.2rem; color:var(--ink-muted); flex-shrink:0;
+    transition:transform .15s ease;
+  }
+  details[open] summary::after{ content:"–"; }
+  details > p, details > ul{ margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:.94rem; }
+  @media (prefers-reduced-motion: reduce){ summary::after{ transition:none; } }
+
+  /* ---- roadmap table ---- */
+  .rmap{ border:1px solid var(--border); border-radius:14px; overflow:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:.9rem; min-width:560px; }
+  th{ text-align:left; background:var(--surface-2); font-weight:600; padding:12px 16px; border-bottom:1px solid var(--border); }
+  td{ padding:12px 16px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--ink-muted); }
+  tr:last-child td{ border-bottom:none; }
+  td.item{ color:var(--ink); font-weight:600; }
+  .sev{ display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:.82rem; }
+  .dot{ width:8px;height:8px;border-radius:50%; flex-shrink:0; }
+  .dot.high{ background:var(--danger); }
+  .dot.med{ background:var(--warn); }
+  .dot.low{ background:var(--ink-muted); }
+
+  footer{ border-top:1px solid var(--border); padding-top:28px; color:var(--ink-muted); font-size:.86rem; }
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand"><span class="k">KNOCK</span><span class="ads">ADS</span><span class="brand-sub">— คู่มือใช้งาน</span></div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="copybtn" data-copy="https://knockads.github.io/knockads/" data-label="คัดลอกลิงก์แอป" title="คัดลอกลิงก์แอป Knock Ads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </button>
+      <a class="top-link" href="https://knockads.github.io/knockads/" target="_blank" rel="noopener">เปิดแอป Knock Ads →</a>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="layout">
+    <nav class="toc">
+      <div class="toc-label">สารบัญ</div>
+      <a href="#start">เริ่มต้นตรงนี้</a>
+      <a href="#prep">เตรียมตัวก่อนเริ่ม</a>
+      <a href="#setup">ขั้นตอนติดตั้ง</a>
+      <a href="#daily">ใช้งานประจำวัน</a>
+      <a href="#optional">ฟีเจอร์เสริม</a>
+      <a href="#warnings">ข้อควรระวัง</a>
+      <a href="#faq">ปัญหาที่พบบ่อย</a>
+      <a href="#roadmap">ข้อจำกัดที่ควรรู้</a>
+    </nav>
+
+    <main>
+      <p class="kicker">Knock Out — ระบบควบคุมโฆษณา Meta</p>
+      <h1>คู่มือใช้งาน Knock Ads แบบ Start to End</h1>
+      <p class="lede">เอกสารนี้พาคุณตั้งแต่ยังไม่มีอะไรเลย จนถึงยิงแคมเปญแรกได้จริง พร้อมจุดที่คนส่วนใหญ่ติดขัดและวิธีแก้ไว้ครบ ทำตามทีละขั้นได้เลย</p>
+
+      <div class="status-row">
+        <span class="pill good">ใช้งานจริงได้แล้ววันนี้</span>
+        <span class="pill warn">อ่านข้อจำกัดก่อนเริ่มใช้งานจริง</span>
+        <span class="pill neutral">ฟรี ไม่มีค่าใช้จ่ายผูกกับ Knock Ads</span>
+      </div>
+
+      <section id="start">
+        <h2>เริ่มต้นตรงนี้</h2>
+        <p class="section-sub">อ่านสั้น ๆ ตรงนี้ก่อนลงมือทำ</p>
+        <div class="verdict">
+          <div class="mark">✓</div>
+          <div>
+            <h3>ทำตามทีละขั้น ไม่หลงทาง</h3>
+            <p>ฟีเจอร์หลักของ Knock Ads ครบและใช้งานได้จริงทุกส่วน ส่วนที่ยากที่สุดในทั้งระบบคือขั้นตอน "เอา Token จาก Meta" ไม่ใช่ตัวแอปเอง คนส่วนใหญ่ที่เพิ่งเริ่มจะติดตรงเรื่อง permission ของ Meta — ถ้าทำตามลำดับในหัวข้อ "ขั้นตอนติดตั้ง" ด้านล่างทีละข้อโดยไม่ข้าม จะไม่เจอปัญหานั้น</p>
+          </div>
+        </div>
+        <div class="callout warn">
+          <span class="callout-label">อ่านก่อนเริ่ม</span>
+          <p>ระบบ "ปิดโฆษณาอัตโนมัติ" และ "รายงานรายสัปดาห์" ทำงานเฉพาะตอนที่เปิดแท็บเว็บนี้ค้างไว้เท่านั้น เพราะเป็นเว็บไฟล์เดียวไม่มีเซิร์ฟเวอร์เบื้องหลัง — ปิดแท็บหรือปิดคอมเมื่อไหร่ ระบบจะไม่ทำงานให้ (มีรายละเอียดในหัวข้อ "ข้อควรระวัง" ด้านล่าง)</p>
+        </div>
+      </section>
+
+      <section id="prep">
+        <h2>เตรียมตัวก่อนเริ่ม</h2>
+        <p class="section-sub">ต้องมีของ 4 อย่างนี้ก่อน ถึงจะเชื่อมแอปได้</p>
+        <div class="grid2">
+          <div class="card">
+            <h3>1. บัญชี Facebook ส่วนตัว</h3>
+            <p>ต้องเป็นแอดมินของเพจ และมีสิทธิ์เข้าถึงบัญชีโฆษณา (Ad Account) ที่จะใช้ยิงแอด — ถ้ายังไม่มีบัญชีโฆษณา ต้องสร้างใน Business Manager ก่อน</p>
+          </div>
+          <div class="card">
+            <h3>2. บัญชีโฆษณาที่ผูกบัตร/วิธีชำระเงินแล้ว</h3>
+            <p>Knock Ads ไม่ได้สร้างบัญชีโฆษณาให้ — แค่ควบคุมบัญชีที่มีอยู่แล้ว ต้องตั้งวิธีชำระเงินใน Ads Manager ของ Meta ให้เรียบร้อยก่อน</p>
+          </div>
+          <div class="card">
+            <h3>3. ใจเย็น ๆ กับขั้นตอน Meta 10 นาทีแรก</h3>
+            <p>ส่วนที่ยากที่สุดคือการเอา Token จาก Meta ไม่ใช่ตัวแอป — ทำตามลำดับในคู่มือนี้ทีละขั้น อย่าข้าม จะไม่มีปัญหา</p>
+          </div>
+          <div class="card">
+            <h3>4. เบราว์เซอร์เครื่องของตัวเอง</h3>
+            <p>Token และ API Key ทุกตัวเก็บอยู่ในเบราว์เซอร์ของแต่ละคนเท่านั้น (ไม่มีระบบบัญชีผู้ใช้กลาง) ถ้าเปลี่ยนเครื่อง/เปลี่ยนเบราว์เซอร์ ต้องเชื่อมต่อใหม่</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="setup">
+        <h2>ขั้นตอนติดตั้ง (ทำครั้งเดียว)</h2>
+        <p class="section-sub">เรียงตามลำดับที่ใช้แล้วลื่นที่สุด ทำตาม 1 → 9 ทีละข้อ อย่าข้าม โดยเฉพาะข้อ 4 และ 5</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div>
+              <h3>สร้างแอป Meta ของตัวเอง</h3>
+              <p>ไปที่ <a class="codelink" href="https://developers.facebook.com/apps/" target="_blank" rel="noopener">developers.facebook.com</a> → ล็อกอิน → <b>My Apps → Create App</b> → เลือกประเภท <b>Business</b> → ตั้งชื่ออะไรก็ได้ → สร้าง จากนั้นกด <b>Add Product</b> ในแดชบอร์ดแอป แล้วเพิ่ม <b>Marketing API</b></p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div>
+              <h3>เผยแพร่แอปทันที (Publish)</h3>
+              <p>ทำต่อจากข้อ 1 เลย ไม่ต้องรอ — ไปที่ <b>Settings → Basic</b> แล้ววาง Privacy Policy URL ใช้ลิงก์สำเร็จรูปนี้ได้เลย ไม่ต้องทำเอง กดเปิดดูหรือกดคัดลอกไปวางได้ทันที:</p>
+              <div class="copyrow">
+                <a class="linkurl" href="https://knockads.github.io/knockads/privacy-policy.html" target="_blank" rel="noopener">Privacy Policy: knockads.github.io/knockads/privacy-policy.html</a>
+                <button class="copybtn" data-copy="https://knockads.github.io/knockads/privacy-policy.html" data-label="คัดลอก">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  คัดลอก
+                </button>
+              </div>
+              <div class="copyrow">
+                <a class="linkurl" href="https://knockads.github.io/knockads/data-deletion.html" target="_blank" rel="noopener">Data Deletion: knockads.github.io/knockads/data-deletion.html</a>
+                <button class="copybtn" data-copy="https://knockads.github.io/knockads/data-deletion.html" data-label="คัดลอก">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  คัดลอก
+                </button>
+              </div>
+              <p>ใส่ Privacy Policy URL เสร็จแล้วกดสวิตช์เผยแพร่แอป (Live) ที่มุมซ้ายบนของแดชบอร์ดแอปได้เลย ทำตั้งแต่ตอนนี้จะได้ไม่ต้องมากังวลเรื่องนี้อีกทีหลัง (ทำไมต้อง Publish เลยตั้งแต่ต้น ดูคำอธิบายในหัวข้อ "ปัญหาที่พบบ่อย" ด้านล่าง)</p>
+              <div class="callout good">
+                <span class="callout-label">ไม่มีเว็บของตัวเอง? ทำฟรีด้วย Google Sites ใน 5 นาที</span>
+                <p>อยากได้ลิงก์ Privacy Policy เป็นของตัวเองแทนการใช้ลิงก์ Knock Ads ด้านบน ทำได้ฟรีโดยไม่ต้องมีโดเมน:</p>
+                <p>1. ไปที่ <a class="codelink" href="https://sites.google.com/new" target="_blank" rel="noopener">sites.google.com/new</a> → เลือกแบบ "ว่างเปล่า" เพื่อเริ่มเว็บใหม่<br>
+                2. คลิก "ใส่ชื่อเว็บไซต์" มุมซ้ายบน → ตั้งชื่อ เช่น "Privacy Policy - [ชื่อธุรกิจ]"<br>
+                3. เปิดแผง <b>Pages</b> ด้านขวา → กดปุ่ม + ที่มุมล่างขวา → New page → ตั้งชื่อ "Privacy Policy" → Done<br>
+                4. กด <b>Insert → Text box</b> แล้วพิมพ์เนื้อหานโยบายความเป็นส่วนตัวลงไป (เอาจากเว็บ Knock Ads ด้านบนมาปรับเป็นต้นแบบได้)<br>
+                5. กด <b>Publish</b> มุมขวาบน → ตั้งที่อยู่เว็บ (URL) → กด Publish อีกครั้ง → ก๊อปลิงก์ที่ได้ไปวางในช่อง Privacy Policy URL</p>
+                <p>ไม่ต้องทำ "Domain Verification" (ยืนยันความเป็นเจ้าของโดเมน) ใด ๆ ทั้งสิ้น — ฟีเจอร์นั้นอยู่คนละส่วนกับการเผยแพร่แอป ข้ามได้เลยสำหรับ Knock Ads</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div>
+              <h3>สร้าง System User ใน Business Portfolio</h3>
+              <p>นี่คือ "บัญชีหุ่นยนต์" ที่จะถือ Token แทนตัวเรา ไปที่ <a class="codelink" href="https://business.facebook.com/settings" target="_blank" rel="noopener">business.facebook.com/settings</a> → เลือกพอร์ตโฟลิโอ (Business Portfolio) ของตัวเอง → เมนูซ้าย <b>ผู้ใช้ → ใช้ระบบ (System Users)</b> → กด <b>เพิ่ม</b> → ตั้งชื่ออะไรก็ได้ (เช่น "Knock Ads Bot") → เลือกบทบาท <b>Admin</b> → สร้าง</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div>
+              <h3>เพิ่มแอปเข้าพอร์ตโฟลิโอ แล้วให้สิทธิ์ System User เข้าถึงแอป</h3>
+              <p>ยังอยู่ใน Business Settings → เมนูซ้าย <b>บัญชี → แอป (Apps)</b> → กด <b>เพิ่ม (Add)</b> → เลือก <b>เชื่อมต่อรหัสแอป (Connect an app ID)</b> → วาง App ID (ดูได้ที่ Settings → Basic ของแอปในข้อ 1) → กด <b>เพิ่มแอป</b></p>
+              <p>คลิกเข้าไปที่แอปที่เพิ่งเพิ่ม → หาส่วนที่กำหนดคนที่มีสิทธิ์เข้าถึงแอป (People / Assign people) → เพิ่ม System User ที่สร้างไว้ในข้อ 3 เข้าไป → ให้สิทธิ์ระดับ Admin</p>
+              <div class="callout warn">
+                <span class="callout-label">ทำไมต้องเพิ่ม System User เข้าแอปด้วย</span>
+                <p>ขั้นนี้คือการให้สิทธิ์ระดับ "แอป" ว่าใครใช้แอปนี้ได้บ้าง — คนละเรื่องกับข้อ 5 ที่เป็นการให้สิทธิ์ระดับ "ทรัพย์สิน" ว่า System User เข้าเพจ/บัญชีโฆษณาไหนได้บ้าง ต้องทำให้ครบทั้งสองขั้น ไม่งั้น Generate Token ในข้อ 6 จะไม่เห็นแอปให้เลือก</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">5</div>
+            <div>
+              <h3>เพิ่ม System User เข้าเพจและบัญชีโฆษณา</h3>
+              <p>ยังอยู่ใน Business Settings → เมนูซ้าย <b>บัญชี → เพจ</b> (และ <b>บัญชี → บัญชีโฆษณา</b>) → เลือกเพจ/บัญชีที่จะใช้ → กด <b>มอบหมายคน (Assign people)</b> → เลือก System User ที่สร้างไว้ → ให้สิทธิ์ระดับ <b>Admin</b> หรือ <b>ผู้ลงโฆษณา</b> ขึ้นไป → ทำซ้ำทั้งฝั่งเพจและฝั่งบัญชีโฆษณา</p>
+              <div class="callout danger">
+                <span class="callout-label">ขั้นที่ลืมไม่ได้</span>
+                <p>ถ้าข้ามขั้นนี้ ต่อให้ Token มี permission ครบ ก็ยังจะเจอ error ว่าไม่มีสิทธิ์เข้าถึงบัญชีโฆษณา/เพจอยู่ดี</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">6</div>
+            <div>
+              <h3>Generate Token จาก System User</h3>
+              <p>เมนูซ้าย <b>ผู้ใช้ → ใช้ระบบ (System Users)</b> → เลือก System User ที่สร้างไว้ → กด <b>Generate New Token</b> → เลือกแอปที่สร้างในข้อ 1 → ติ๊ก permission ทั้งหมดนี้ให้ครบ (8 ตัว):</p>
+              <div class="field">
+                <span class="tag">ads_read</span><span class="tag">ads_management</span><span class="tag">business_management</span><span class="tag">catalog_management</span><span class="tag">pages_manage_ads</span><span class="tag">pages_read_engagement</span><span class="tag">pages_show_list</span><span class="tag">threads_business_basic</span>
+              </div>
+              <div class="callout danger">
+                <span class="callout-label">จุดที่พลาดกันบ่อยที่สุด</span>
+                <p>ตัวที่มักลืมคือ <code>pages_show_list</code> เพราะชื่อคล้าย <code>pages_read_engagement</code> แต่เป็นคนละตัวกันและทำหน้าที่ต่างกัน — <code>pages_show_list</code> คือตัวที่ Meta ใช้จริงสำหรับดึงรายชื่อเพจที่บริหารอยู่ ติ๊กทั้ง 8 ตัวไปพร้อมกันเลย ไม่ต้องเลือกว่าจะเอาตัวไหนออก</p>
+              </div>
+              <p>กด <b>Generate Token</b> → Token จะโชว์ให้เห็น <b>ครั้งเดียว</b> ก๊อปเก็บไว้ให้เรียบร้อยก่อนปิดหน้าต่าง — Token แบบนี้ไม่มีวันหมดอายุ ไม่ต้องมาต่ออายุทุก 60 วัน</p>
+              <details style="margin-top:10px; background:var(--surface-2); border-color:var(--border);">
+                <summary style="font-size:.9rem;">มีทางลัดไหม เผื่ออยากทดสอบเร็ว ๆ ก่อน</summary>
+                <p>มี — ไปที่ <a class="codelink" href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener">developers.facebook.com/tools/explorer</a> เลือกแอปของเรา → Add Permissions ติ๊ก permission ชุดเดียวกับด้านบน → Generate Access Token ได้ Token ทันทีโดยไม่ต้องทำข้อ 3-5 เลย แต่ข้อเสียคือ Token แบบนี้หมดอายุทุก 60 วัน ต้องมาต่ออายุเองที่ <a class="codelink" href="https://developers.facebook.com/tools/debug/accesstoken/" target="_blank" rel="noopener">developers.facebook.com/tools/debug/accesstoken</a> เหมาะกับทดสอบเฉย ๆ ไม่เหมาะกับใช้งานจริงจัง</p>
+              </details>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">7</div>
+            <div>
+              <h3>หา Ad Account ID</h3>
+              <p>เปิด <a class="codelink" href="https://adsmanager.facebook.com/" target="_blank" rel="noopener">adsmanager.facebook.com</a> → ดูที่ URL จะมี <code>act=123456789</code> → ใช้เป็น <code>act_123456789</code> (มี act_ นำหน้าเสมอ)</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">8</div>
+            <div>
+              <h3>เชื่อมต่อในแอป Knock Ads</h3>
+              <p>เปิด <a class="codelink" href="https://knockads.github.io/knockads/" target="_blank" rel="noopener">knockads.github.io/knockads</a> → เมนู <b>เครื่องมือ → Token</b> → วาง Access Token และ Ad Account ID ในการ์ด <b>META ACCESS TOKEN</b> → กด <b>บันทึก</b> แล้วกด <b>ทดสอบ Token</b></p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">9</div>
+            <div>
+              <h3>รันตรวจระบบก่อนใช้จริง</h3>
+              <p>เมนู <b>เครื่องมือ → ตรวจระบบ</b> → กด <b>รันตรวจทั้งหมด</b> ระบบจะยิงทดสอบทุกจุดจริง (Token, บัญชีโฆษณา, สิทธิ์เข้าถึงเพจ, แคมเปญ ฯลฯ) ถ้าทุกแถวขึ้น ✅ แปลว่าพร้อมใช้งานเต็มรูปแบบ — ถ้ามีแถวไหนขึ้น ❌ ให้อ่านข้อความ error ในแถวนั้น มันบอกวิธีแก้ตรง ๆ</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="daily">
+        <h2>ใช้งานประจำวัน</h2>
+        <p class="section-sub">แผนที่เมนูทั้งหมด — เปิดคู่กับแอปจริงแล้วไล่ตามได้เลย</p>
+
+        <div class="navmap">
+          <div class="navmap-row">
+            <div class="menu">ภาพรวม</div>
+            <div class="items">แดชบอร์ดสรุป KPI หลัก, ยอดขาย, กราฟรายวัน — เลือกช่วงวันที่ได้เอง ไม่ใช่แค่ 7/30 วัน</div>
+          </div>
+          <div class="navmap-row">
+            <div class="menu">จัดการโฆษณา</div>
+            <div class="items">
+              <b>Ads Manager</b> — Wizard สร้างแคมเปญใหม่ 4 ขั้น (Campaign → Targeting → Creative → Review) รองรับทั้งโฆษณาแบบเว็บไซต์และแบบข้อความ (Messenger/WhatsApp)<br>
+              <b>AI Ad Creator</b> — เลือกแอดที่ทำผลงานดี ให้ AI ช่วยคิดก็อปปี้/รูปใหม่ แล้วโคลนเป็นแอดใหม่ได้ทันที<br>
+              <b>AI Drafts</b> — ที่เก็บก็อปปี้ที่ AI คิดไว้ ยังไม่ได้ใช้งาน
+            </div>
+          </div>
+          <div class="navmap-row">
+            <div class="menu">วิเคราะห์</div>
+            <div class="items">
+              <b>AI แนะนำ</b> — สรุปจุดที่ควรปรับทั้งบัญชีในคลิกเดียว<br>
+              <b>A/B Testing, Sales Funnel, Audience Insights, คัดกรองลูกค้า, Creative Performance, Dayparting, Geo จังหวัด</b> — วิเคราะห์เจาะแต่ละมุม พร้อมคำแนะนำจาก AI ทุกหน้า
+            </div>
+          </div>
+          <div class="navmap-row">
+            <div class="menu">อัตโนมัติ</div>
+            <div class="items">ตั้งกฎปิดโฆษณาอัตโนมัติ, ตรวจตามเวลาที่กำหนด, รายงานสรุปรายสัปดาห์ — <b>ต้องเปิดแท็บนี้ค้างไว้ถึงจะทำงาน</b> (ดูหัวข้อข้อควรระวัง)</div>
+          </div>
+          <div class="navmap-row">
+            <div class="menu">เครื่องมือ</div>
+            <div class="items">จุดคุ้มทุน (คำนวณ CPA ที่คุ้มทุนต่อสินค้า), ตรวจระบบ, การตั้งค่า Token/API Key ทั้งหมด</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:32px">เลือก Performance Goal ให้ถูกตอนสร้างแคมเปญ</h3>
+        <p>ในขั้นตอนที่ 2 ของ Wizard ถ้าธุรกิจขายผ่านแชท ให้เลือก Performance Goal เป็น <b>"ข้อความ (Messenger/IG/WhatsApp)"</b> — ระบบจะโชว์ตัวเลือก <b>ปลายทางข้อความ</b> เพิ่มมาให้เลือก Messenger/WhatsApp/อัตโนมัติ และล็อก CTA ให้ถูกต้องเอง ไม่ต้องกรอกลิงก์เว็บไซต์ก็สร้างได้ ถ้าสินค้าไม่มีเว็บไซต์</p>
+      </section>
+
+      <section id="optional">
+        <h2>ฟีเจอร์เสริม (ไม่บังคับ)</h2>
+        <p class="section-sub">ใช้ได้เลยโดยไม่ต้องเปิดของพวกนี้ แต่ถ้าอยากได้ฟีเจอร์ AI ครบต้องตั้งเพิ่ม</p>
+        <div class="grid2">
+          <div class="card">
+            <h3>Anthropic API Key</h3>
+            <p>ขับเคลื่อนฟีเจอร์ AI เกือบทั้งหมดในแอป (คำแนะนำ, วิเคราะห์, เขียนก็อปปี้) สมัครที่ <a class="codelink" href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a> เติมเครดิตขั้นต่ำ ~180 บาท ใช้ได้หลายร้อยครั้ง</p>
+          </div>
+          <div class="card">
+            <h3>OpenAI API Key</h3>
+            <p>สำหรับ Gen รูปโฆษณาแบบภาพถ่ายจริงใน AI Ad Creator ถ้าไม่ตั้งค่า ระบบจะวาดรูปแบบกราฟิกให้แทนอัตโนมัติ ไม่มีก็ใช้แอปได้ปกติ</p>
+          </div>
+          <div class="card">
+            <h3>LINE แจ้งเตือน</h3>
+            <p>ให้ระบบส่งแจ้งเตือนเข้า LINE เวลากฎอัตโนมัติทำงาน ต้องสร้าง LINE Bot + Cloudflare Worker แยกต่างหาก (มีคู่มือละเอียดในแอป) เหมาะกับคนที่ใช้จริงจัง</p>
+          </div>
+          <div class="card">
+            <h3>หลายบัญชีโฆษณา</h3>
+            <p>ถ้าดูแลหลายบัญชี ใช้การ์ด "หลายบัญชีโฆษณา" ในหน้า Token กด "ดึงรายชื่อบัญชีทั้งหมดจาก Token ด้านล่าง" เพื่อเพิ่มทีเดียวหลายบัญชี ไม่ต้องตั้งทีละอัน</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warnings">
+        <h2>ข้อควรระวัง — อ่านก่อนเริ่มใช้งานจริง</h2>
+        <p class="section-sub">3 เรื่องที่ควรรู้ไว้ก่อน จะได้ไม่งงทีหลัง</p>
+
+        <div class="callout warn">
+          <span class="callout-label">1 · อัตโนมัติทำงานเฉพาะตอนเปิดแท็บค้างไว้</span>
+          <p>Knock Ads เป็นเว็บไฟล์เดียว ไม่มีเซิร์ฟเวอร์เบื้องหลัง ฟีเจอร์ "ปิดโฆษณาอัตโนมัติ", "ตรวจตามเวลา" และ "รายงานรายสัปดาห์" เช็คทุก 1 นาที <b>เฉพาะตอนที่เปิดหน้านี้ค้างอยู่ในเบราว์เซอร์เท่านั้น</b> ปิดแท็บ ปิดคอม หรือคอมหลับ ระบบจะไม่ทำงานให้ — ถ้าต้องการอัตโนมัติจริงแบบ 24 ชม. ต้องตั้ง LINE Worker แยกต่างหาก (ดูหัวข้อฟีเจอร์เสริม)</p>
+        </div>
+
+        <div class="callout danger">
+          <span class="callout-label">2 · Token และ API Key เป็นของส่วนตัว ห้ามแชร์</span>
+          <p>Token ที่วางในแอปมีสิทธิ์แก้ไข/หยุดโฆษณาและใช้เงินในบัญชีได้จริง เก็บอยู่ในเบราว์เซอร์ของคุณเท่านั้น ไม่ผ่านเซิร์ฟเวอร์ของใคร — อย่าแชร์สกรีนช็อตหน้า Token หรือบอก Token ให้คนอื่นเด็ดขาด และถ้าใช้คอมสาธารณะ ให้กด "ลบออกจากเครื่อง" ทุกครั้งก่อนลุกจากเครื่อง</p>
+        </div>
+
+        <div class="callout good">
+          <span class="callout-label">3 · ใช้ลิงก์เดียวกับคนอื่นได้ ไม่ชนกัน</span>
+          <p>ข้อดีคือ localStorage แยกตามเบราว์เซอร์ของแต่ละเครื่อง ต่อให้คนอื่นเปิดลิงก์ knockads.github.io เดียวกัน ข้อมูล Token/บัญชีของคุณจะไม่ไปปนกับใคร ใช้ลิงก์เดียวกันได้สบายใจ ไม่ต้องมีไฟล์แยกของใครโดยเฉพาะ</p>
+        </div>
+      </section>
+
+      <section id="faq">
+        <h2>ปัญหาที่พบบ่อย</h2>
+        <p class="section-sub">รวมปัญหาจริงที่เจอบ่อยระหว่างตั้งค่า เผื่อคุณเจอแบบเดียวกัน</p>
+
+        <details>
+          <summary>ทำไมต้อง Publish ตั้งแต่ข้อ 2 เลย ไม่รอให้จบก่อนได้ไหม</summary>
+          <p>รอได้ ไม่บังคับว่าต้องทำตอนไหน แต่แนะนำให้ทำเลยตั้งแต่ข้อ 2 เพราะเป็นขั้นที่เร็วที่สุดและไม่ต้องพึ่งขั้นตอนอื่นก่อน — ถ้าข้ามไปก่อน: แอปโหมด Development ยังใช้งานได้ทันทีถ้าเพจ/บัญชีโฆษณาอยู่ใน Business Portfolio เดียวกับแอป แต่โควต้าเรียก API จะต่ำกว่ามาก และถ้าเป็นบัญชีของลูกค้าที่แค่แชร์สิทธิ์มาให้ โหมด Development จะใช้งานไม่ได้เลย ต้อง Publish เป็น Live เท่านั้น — ทำเลยตั้งแต่ต้นจะได้ไม่ต้องมาห่วงเรื่องนี้อีก</p>
+        </details>
+
+        <details>
+          <summary>เชื่อมแอปกับเพจ/บัญชีโฆษณา/พอร์ตโฟลิโอ ต้องทำตรงไหน</summary>
+          <p>ไปที่ Business Settings → บัญชี → แอป (Apps) → เพิ่ม → เชื่อมต่อรหัสแอป → วาง App ID แล้วเข้าไปกำหนดคนที่มีสิทธิ์เข้าถึงแอป (รายละเอียดเต็มอยู่ในขั้นตอนที่ 4 ของหัวข้อ "ขั้นตอนติดตั้ง") ขั้นนี้แยกจากการมอบหมาย System User เข้าเพจ/บัญชีโฆษณาในขั้นตอนที่ 5 ต้องทำให้ครบทั้งสองส่วน</p>
+        </details>
+
+        <details>
+          <summary>ตรวจระบบขึ้น "ไม่พบเพจ" ทั้งที่ติ๊ก permission ครบแล้ว</summary>
+          <p>สาเหตุเกือบทุกครั้งคือติ๊ก <code>pages_read_engagement</code> แต่ลืม <code>pages_show_list</code> ซึ่งเป็นตัวที่ Meta ใช้จริงสำหรับดึงรายชื่อเพจที่บริหารอยู่ ไปที่ <a class="codelink" href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener">Graph API Explorer</a> หรือหน้า System User แล้วติ๊ก <code>pages_show_list</code> เพิ่ม สร้าง Token ใหม่แล้วลองอีกครั้ง</p>
+        </details>
+
+        <details>
+          <summary>ขึ้น error "ต้องมีสิทธิ์บทบาทผู้ลงโฆษณาหรือสูงกว่า"</summary>
+          <p>เกิดกับ Token แบบ System User — permission scope ครบ แต่ System User ยังไม่ถูก "มอบหมาย" ให้เข้าถึงบัญชีโฆษณานั้นจริง ๆ ไปที่ Business Settings → บัญชี → บัญชีโฆษณา → เลือกบัญชี → มอบหมายคน → เลือก System User → ให้สิทธิ์ Admin หรือ Advertiser</p>
+        </details>
+
+        <details>
+          <summary>สร้างแคมเปญแบบ "ข้อความ" แล้ว แต่ใน Ads Manager ของ Meta ขึ้น Conversion location เป็น Website</summary>
+          <p>ปัญหานี้เกิดจากระบบเดิมไม่ได้ส่งค่าปลายทางที่ชัดเจนไปให้ Meta — แก้ไขในแอปแล้ว ตอนนี้เลือก Performance Goal เป็น "ข้อความ" จะมี dropdown "ปลายทางข้อความ" ให้เลือกเพิ่มเสมอ ถ้ายังเจอปัญหานี้กับแคมเปญที่สร้างไว้ก่อนหน้า ต้องลบ Ad Set เดิมแล้วสร้างใหม่ผ่าน Wizard เวอร์ชันล่าสุด แก้ของเก่าที่สร้างไปแล้วไม่ได้</p>
+        </details>
+
+        <details>
+          <summary>SMS ยืนยันตัวตนจาก Meta Developer ไม่เข้าเบอร์เลย</summary>
+          <p>เป็นปัญหาฝั่ง Meta ที่พบได้บ่อยกับเบอร์ไทยบางเครือข่าย ลองสลับไปยืนยันด้วยแอป Authenticator (ถ้า Meta เสนอตัวเลือกนี้) หรือรอสัก 15-30 นาทีแล้วขอส่งใหม่ อย่ากดขอรัวเร็วเกินไปเพราะ Meta จะบล็อกชั่วคราว</p>
+        </details>
+
+        <details>
+          <summary>ทำไมเว็บอัปเดตให้เองทั้งที่ยังไม่ได้แก้อะไร</summary>
+          <p>Knock Ads โฮสต์อยู่บน GitHub Pages ซึ่งจะดึงโค้ดล่าสุดจากที่เก็บ GitHub มาให้อัตโนมัติทุกครั้งที่มีการอัปเดตไฟล์ต้นทาง ไม่ต้องทำอะไรฝั่งผู้ใช้ แค่รีเฟรชหน้าเว็บก็จะเห็นเวอร์ชันใหม่</p>
+        </details>
+
+        <details>
+          <summary>ต้องการให้ยิงแอดแบบส่งข้อความแทนเข้าเว็บไซต์ ต้องตั้งยังไงในฝั่ง Meta</summary>
+          <p>เลือก Conversion location เป็น "App, website, messaging apps or calls" แล้วเลือกปลายทางเป็น Messenger/Instagram/WhatsApp — ถ้าสร้างผ่าน Wizard ของ Knock Ads ให้เลือก Performance Goal เป็น "ข้อความ" ระบบจะตั้งค่าฝั่ง Meta ให้ถูกต้องอัตโนมัติ</p>
+        </details>
+      </section>
+
+      <section id="roadmap">
+        <h2>ข้อจำกัดที่ควรรู้</h2>
+        <p class="section-sub">ไม่กระทบการใช้งานวันแรก แต่รู้ไว้จะได้ไม่แปลกใจทีหลัง</p>
+        <div class="rmap">
+          <table>
+            <thead><tr><th style="width:56px">ระดับ</th><th>เรื่อง</th><th>รายละเอียด</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="sev"><span class="dot med"></span>กลาง</span></td>
+                <td class="item">ยังไม่มีปุ่ม Export CSV/PDF ที่จัดหน้าสวย</td>
+                <td>ตอนนี้ "ส่งออกรายงาน" ทำได้แค่ผ่าน print ของเบราว์เซอร์ ถ้าต้องส่งรายงานให้ลูกค้าบ่อย ๆ ใช้วิธี print เป็น PDF ไปพลางก่อนได้</td>
+              </tr>
+              <tr>
+                <td><span class="sev"><span class="dot low"></span>ต่ำ</span></td>
+                <td class="item">ไม่มีระบบบัญชีผู้ใช้แยกทีม</td>
+                <td>เหมาะกับใช้คนเดียวต่อเครื่อง ถ้าอยากให้หลายคนดูข้อมูลชุดเดียวกันพร้อมกันแบบเรียลไทม์ ยังทำไม่ได้ในตอนนี้</td>
+              </tr>
+              <tr>
+                <td><span class="sev"><span class="dot low"></span>ต่ำ</span></td>
+                <td class="item">รับมือ API ล่ม/เน็ตหลุดกลางทางยังไม่แข็งแรงมาก</td>
+                <td>ถ้า Meta ตอบช้าหรือเน็ตสะดุดระหว่างทำรายการหลายรายการพร้อมกัน (เช่น ปิดโฆษณาทีละหลายตัว) บางรายการอาจไม่สำเร็จโดยไม่มีการลองใหม่อัตโนมัติ ควรเช็คผลลัพธ์ในแอปหลังรันคำสั่งใหญ่เสมอ</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        Knock Ads โดย Knock Out · อัปเดตล่าสุดตามเวอร์ชันที่ใช้งานจริงบน <a href="https://knockads.github.io/knockads/" target="_blank" rel="noopener">knockads.github.io/knockads</a>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.copybtn');
+    if(!btn) return;
+    var text = btn.getAttribute('data-copy');
+    var label = btn.getAttribute('data-label') || 'คัดลอก';
+    var setCopied = function(){
+      btn.classList.add('is-copied');
+      var textNode = Array.prototype.find.call(btn.childNodes, function(n){ return n.nodeType === 3 && n.textContent.trim(); });
+      var prevText = textNode ? textNode.textContent : null;
+      if(textNode) textNode.textContent = ' คัดลอกแล้ว';
+      else btn.setAttribute('title', 'คัดลอกแล้ว');
+      setTimeout(function(){
+        btn.classList.remove('is-copied');
+        if(textNode && prevText !== null) textNode.textContent = prevText;
+      }, 1500);
+    };
+    var fallbackCopy = function(){
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand('copy'); }catch(err){}
+      document.body.removeChild(ta);
+      setCopied();
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(setCopied).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  });
+</script>
+
+</body>
+</html>

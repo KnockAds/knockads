@@ -281,6 +281,7 @@ document.addEventListener("click",e=>{
 /* ---------- Auth (ระบบล็อกอินลูกค้า — แยกจาก Meta Ads Token ของแต่ละคนโดยสิ้นเชิง) ---------- */
 const AUTH_API = "https://knockads-auth.tanapat0038zaza.workers.dev";
 const APP_URL = "https://knockads.github.io/knockads/";
+const GUIDE_URL = "https://knockads.github.io/knockads/guide.html";
 const AUTH = {
   token: LS.get("authToken",""),
   user: LS.get("authUserInfo",null), // {username, role, displayName, expiresAt}
@@ -1841,7 +1842,7 @@ PAGES.token = async function(){
   $("page").innerHTML=`
     <div class="card mb"><h3>📖 มือใหม่เริ่มที่นี่ — คู่มือการเชื่อมต่อทีละขั้น</h3>
       <div class="row">
-        <button class="btn" onclick="guideOpen('meta')">🔑 วิธีเอา Meta Token + Account ID</button>
+        <a class="btn" href="${GUIDE_URL}#setup" target="_blank" rel="noopener">🔑 วิธีเอา Meta Token + Account ID</a>
         <button class="btn" onclick="guideOpen('anthropic')">🤖 วิธีเอา Anthropic Key (ฟีเจอร์ AI)</button>
         <button class="btn" onclick="guideOpen('openai')">🪄 วิธีเอา OpenAI Key (Gen รูป)</button>
         <button class="btn" onclick="guideOpen('line')">💬 วิธีเชื่อม LINE Bot</button>
@@ -1868,7 +1869,7 @@ PAGES.token = async function(){
     </div>
     <div class="grid g2" style="align-items:start">
     <div>
-      <div class="card mb"><h3>🔑 META ACCESS TOKEN <button class="btn sm" style="float:right" onclick="guideOpen('meta')">📖 คู่มือ</button></h3>
+      <div class="card mb"><h3>🔑 META ACCESS TOKEN <a class="btn sm" style="float:right" href="${GUIDE_URL}#setup" target="_blank" rel="noopener">📖 คู่มือ</a></h3>
         <label>Long-lived User Access Token</label>
         <textarea id="tkVal" rows="3" placeholder="EAAxxxxxxx...">${esc(S.token)}</textarea>
         <label>Ad Account ID (act_XXXXXXXXX)</label><input id="tkAct" value="${esc(S.act)}" placeholder="act_123456789">
@@ -2735,7 +2736,6 @@ function renderGeoMap(m){
 }
 /* ---------- คู่มือมือใหม่ ---------- */
 const GUIDES={
-meta:{t:"🔑 วิธีเชื่อมต่อ Meta (Token + Ad Account ID)",b:'<strong>สร้างแอป Meta ก่อน (ครั้งเดียว)</strong>\n1. เข้า developers.facebook.com → ล็อกอิน → My Apps → <strong>Create App</strong>\n2. เลือกประเภท <strong>Business</strong> → ตั้งชื่อแอปอะไรก็ได้ → สร้าง\n3. ในแดชบอร์ดแอป กด <strong>Add Product</strong> → เพิ่ม <strong>Marketing API</strong>\n4. <strong>เผยแพร่แอป</strong>: Settings → Basic → ใส่ Privacy Policy URL (ทำหน้าเดียวฟรีด้วย Google Sites ได้) → กดเผยแพร่ที่เมนูซ้าย (จำเป็น! ไม่งั้นสร้างโฆษณาผ่าน API ไม่ได้)\n\n<strong>เอา Access Token</strong>\n1. ไปที่ developers.facebook.com/tools/explorer\n2. มุมขวา: เลือกแอปของคุณ → Add Permissions 4 ตัว: <span class="tag">ads_read</span><span class="tag">ads_management</span><span class="tag">pages_show_list</span><span class="tag">pages_manage_ads</span> <em>(ตัวที่คนพลาดบ่อยคือ <strong>pages_show_list</strong> — ตัวนี้แหละที่ทำให้ระบบดึงรายชื่อเพจได้ ไม่ใช่ pages_read_engagement ที่หลายคนเข้าใจผิด)</em>\n3. กด <strong>Generate Access Token</strong> → ยืนยัน → ก๊อป Token\n4. ต่ออายุเป็น 60 วัน: developers.facebook.com/tools/debug/accesstoken → วาง Token → Debug → กด <strong>Extend Access Token</strong> ล่างสุด → ใช้ตัวที่ได้ใหม่\n5. หา Ad Account ID: เปิด adsmanager.facebook.com → ดูที่ URL มี <strong>act=123456789</strong> → ใช้เป็น <strong>act_123456789</strong>\n\nวาง 2 ค่าในการ์ด META ACCESS TOKEN → 💾 บันทึก → 🧪 ทดสอบ Token'},
 anthropic:{t:"🤖 วิธีเอา Anthropic API Key (ฟีเจอร์ AI ทั้งหมด)",b:'1. เข้า <strong>console.anthropic.com</strong> → สมัคร/ล็อกอิน\n2. เมนู <strong>Billing</strong> → เติมเครดิต (ขั้นต่ำ $5 ≈ 180 บาท ใช้วิเคราะห์ได้หลายร้อยครั้ง)\n3. เมนู <strong>API Keys</strong> → <strong>Create Key</strong> → ก๊อป key ขึ้นต้น <strong>sk-ant-</strong> (โชว์ครั้งเดียว!)\n4. วางในการ์ด ANTHROPIC API KEY → 💾 บันทึก\n\nใช้ขับเคลื่อน: AI แนะนำ, Clone Studio (คิดกลุ่มเป้าหมาย/copy), วิเคราะห์ Funnel/Geo/Golden Hours, รายงานสัปดาห์'},
 openai:{t:"🪄 วิธีเอา OpenAI API Key (Gen รูปภาพถ่ายจริง)",b:'1. เข้า <strong>platform.openai.com</strong> → สมัคร/ล็อกอิน\n2. Settings → <strong>Billing</strong> → ผูกบัตร + เติมเครดิต (ขั้นต่ำ $5)\n3. เมนู <strong>API keys</strong> → <strong>Create new secret key</strong> → ก๊อป key ขึ้นต้น <strong>sk-</strong>\n4. <strong>สำคัญ:</strong> ปลดล็อกโมเดลรุ่นล่าสุด gpt-image-2: Settings → <strong>Organization → Verify</strong> ยืนยันตัวตนครั้งเดียว (ถ้าไม่ทำ ระบบจะถอยไปใช้รุ่นเก่ากว่าให้อัตโนมัติ)\n5. วางในการ์ด OPENAI API KEY → 💾 บันทึก\n\nค่า Gen ~1-6 บาท/รูป คิดกับบัญชี OpenAI ของคุณโดยตรง'},
 line:{t:"💬 วิธีเชื่อม LINE Bot (สั่งงานผ่านแชท + แจ้งเตือน)",b:'ใช้ <strong>Cloudflare Worker (ฟรี)</strong> เป็นบอทกลางทำงาน 24 ชม. — คู่มือละเอียดอยู่ในไฟล์ <strong>LINE-SETUP.md</strong> สรุปย่อ:\n\n<strong>A. สร้างบอท LINE (5 นาที)</strong>\ndevelopers.line.biz → Create provider → <strong>Messaging API channel</strong> → จด Channel secret + Issue Channel access token → สแกน QR แอดบอทเป็นเพื่อน → ปิด Auto-reply / เปิด Webhook ใน OA Manager\n\n<strong>B. สร้าง Worker (5 นาที)</strong>\ndash.cloudflare.com → Workers → Create → Edit code → วางโค้ดจากไฟล์ <strong>line-ads-worker.js</strong> → Deploy → Settings → Variables: META_TOKEN, ACT_ID, LINE_TOKEN, LINE_SECRET, NOTIFY_SECRET(ตั้งเอง) → Triggers → Cron: <strong>0 2 * * *</strong>\n\n<strong>C. เชื่อม (5 นาที)</strong>\n1. Webhook URL = https://ชื่อ.workers.dev<strong>/webhook</strong> → Verify → เปิด Use webhook\n2. พิมพ์ <strong>id</strong> ในแชท → เอา userId ใส่ตัวแปร LINE_USER_ID → Deploy ใหม่\n3. การ์ด LINE หน้านี้: Worker URL + Notify Secret → 🧪 ทดสอบ\n\nคำสั่ง: สถานะ • รายการ • ปิด 3 ยืนยัน • เปิด 3 ยืนยัน • แจ้งเตือน เปิด/ปิด'}
