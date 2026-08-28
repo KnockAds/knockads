@@ -1575,7 +1575,8 @@ function crRender(grouped){
       const isVideo=merged.plays>0;
       const sp=merged.raw.spend;
       return {id:key,name:repAd?repAd.name:repIns.ad_name,repAd,raw:merged.raw,spend:sp,ctr:merged.raw.ctr,
-        cpa:cpa(sp,merged.raw.actions),
+        cpa:cpa(sp,merged.raw.actions), roas:roas(sp,merged.raw.action_values),
+        msgCount:messages(merged.raw.actions), costPerMsg:costPerMessage(sp,merged.raw.actions),
         r3: merged.raw.impressions>0? actVal(merged.raw.actions,"video_view")/merged.raw.impressions*100 : null,
         isVideo, p25:merged.p25,p50:merged.p50,p75:merged.p75,p100:merged.p100,plays:merged.plays,
         campaigns, adCount:adIds.length};
@@ -1585,12 +1586,13 @@ function crRender(grouped){
       const plays=vvFirst(i.video_play_actions),s3=actVal(i.actions,"video_view");
       const repAd=adMap[i.ad_id];
       return {id:i.ad_id,name:i.ad_name,repAd,raw:i,spend:sp,ctr:+i.ctr||0,cpa:cpa(sp,i.actions),
+        roas:roas(sp,i.action_values), msgCount:messages(i.actions), costPerMsg:costPerMessage(sp,i.actions),
         r3:impr>0?s3/impr*100:null, isVideo:plays>0,
         p25:vvFirst(i.video_p25_watched_actions),p50:vvFirst(i.video_p50_watched_actions),p75:vvFirst(i.video_p75_watched_actions),p100:vvFirst(i.video_p100_watched_actions),plays,
         campaigns:[i.campaign_name].filter(Boolean), adCount:1};});
   }
   groups.sort((a,b)=>b.ctr-a.ctr);
-  const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">CTR ${fmtP(r.ctr)} • ${fmtB(r.spend)} • CPA ${r.cpa?fmtB(r.cpa):"—"}</div></div></div>`;};
+  const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">CTR ${fmtP(r.ctr)} • ${fmtB(r.spend)} • CPA ${r.cpa?fmtB(r.cpa):"—"}</div><div class="muted small">ROAS ${r.roas!==null?r.roas.toFixed(2)+"x":"—"} • ทักแชท ${fmtN(r.msgCount)} • Cost/ข้อความ ${r.costPerMsg?fmtB(r.costPerMsg):"—"}</div></div></div>`;};
   const withData=groups.filter(r=>r.spend>0);
   $("crTop").innerHTML=withData.slice(0,4).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crLose").innerHTML=withData.slice(-4).reverse().map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
