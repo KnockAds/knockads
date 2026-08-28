@@ -1521,35 +1521,87 @@ PAGES.quality = async function(){
 /* =====================================================================
    11) CREATIVE PERFORMANCE (video metrics)
    ===================================================================== */
+const vvFirst=x=>x&&x[0]?+x[0].value:0;
+function crKey(adId){
+  const a=window._crAdMap&&window._crAdMap[adId]; const c=(a&&a.creative)||{};
+  return c.effective_object_story_id || c.id || adId || "unknown";
+}
+function crMergeRaw(list){
+  const m={spend:0,impressions:0,clicks:0,reach:0,actions:[],action_values:[]};
+  let plays=0,p25=0,p50=0,p75=0,p100=0;
+  const addActs=(arr,into)=>{ (arr||[]).forEach(x=>{ const f=into.find(y=>y.action_type===x.action_type); if(f) f.value=(+f.value)+(+x.value); else into.push({action_type:x.action_type,value:+x.value}); }); };
+  list.forEach(i=>{
+    m.spend+=+i.spend||0; m.impressions+=+i.impressions||0; m.clicks+=+i.clicks||0; m.reach+=+i.reach||0;
+    addActs(i.actions,m.actions); addActs(i.action_values,m.action_values);
+    plays+=vvFirst(i.video_play_actions); p25+=vvFirst(i.video_p25_watched_actions); p50+=vvFirst(i.video_p50_watched_actions); p75+=vvFirst(i.video_p75_watched_actions); p100+=vvFirst(i.video_p100_watched_actions);
+  });
+  m.ctr = m.impressions>0? m.clicks/m.impressions*100 : 0;
+  m.cpm = m.impressions>0? m.spend/m.impressions*1000 : 0;
+  return {raw:m, plays, p25, p50, p75, p100};
+}
 PAGES.creative = async function(){
-  $("page").innerHTML=`<div class="row spread mb">${presetSeg("PAGES.creative")}</div>
+  $("page").innerHTML=`<div class="row spread mb">${presetSeg("PAGES.creative")}
+    <div class="seg"><button id="crGrpOn" class="active" onclick="crSetGroup(true)">🔗 รวมตาม Post ID</button><button id="crGrpOff" onclick="crSetGroup(false)">แยกตามชิ้นแอด</button></div></div>
     <div class="grid g2">
       <div class="card"><h3>🏆 TOP PERFORMERS</h3><div id="crTop"></div></div>
       <div class="card"><h3>📉 LOSERS</h3><div id="crLose"></div></div>
     </div>
-    <div class="card mt tablewrap"><h3>🎬 CREATIVE METRICS ทุกชิ้นงาน</h3><div id="crBox"><span class="spin"></span></div></div>`;
+    <div class="card mt tablewrap"><h3>🎬 CREATIVE METRICS <span id="crModeLabel" class="muted small">(รวมตาม Post ID — ใช้ Post/ชิ้นงานเดียวกันหลายแคมเปญจะรวมเป็นแถวเดียว)</span></h3><div id="crBox"><span class="spin"></span></div></div>`;
   const range=presetRange(S.preset);
   const [ads,ins]=await Promise.all([adsWithCreatives(),
-    mGETAll(`/${S.act}/insights`,{fields:INS_FIELDS+",ad_id,ad_name,video_play_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions",time_range:range,level:"ad",action_breakdowns:"action_type"},"cr_"+S.preset)]);
+    mGETAll(`/${S.act}/insights`,{fields:INS_FIELDS+",ad_id,ad_name,campaign_id,campaign_name,video_play_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions",time_range:range,level:"ad",action_breakdowns:"action_type"},"cr_"+S.preset)]);
   const adMap={}; ads.forEach(a=>adMap[a.id]=a);
-  const vv=x=>x&&x[0]?+x[0].value:0;
-  const rows=ins.map(i=>{const impr=+i.impressions||0,sp=+i.spend||0;
-    const plays=vv(i.video_play_actions),s3=actVal(i.actions,"video_view");
-    return {id:i.ad_id,name:i.ad_name,raw:i,spend:sp,ctr:+i.ctr||0,cpa:cpa(sp,i.actions),
-      roas:roas(sp,i.action_values), r3:impr>0?s3/impr*100:null, isVideo:plays>0,
-      p25:vv(i.video_p25_watched_actions),p50:vv(i.video_p50_watched_actions),p75:vv(i.video_p75_watched_actions),p100:vv(i.video_p100_watched_actions),plays};});
-  rows.sort((a,b)=>b.ctr-a.ctr);
-  const mini=r=>{const a=adMap[r.id];return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong><div class="muted small">CTR ${fmtP(r.ctr)} • ${fmtB(r.spend)} • CPA ${r.cpa?fmtB(r.cpa):"—"}</div></div></div>`;};
-  const withData=rows.filter(r=>r.spend>0);
+  window._crAdMap=adMap; window._crIns=ins;
+  crRender(true);
+};
+function crSetGroup(grouped){
+  if($("crGrpOn")) $("crGrpOn").classList.toggle("active",grouped);
+  if($("crGrpOff")) $("crGrpOff").classList.toggle("active",!grouped);
+  if($("crModeLabel")) $("crModeLabel").textContent = grouped? "(รวมตาม Post ID — ใช้ Post/ชิ้นงานเดียวกันหลายแคมเปญจะรวมเป็นแถวเดียว)" : "(แยกตามชิ้นแอด — เห็นทุกแอดแยกทีละตัว)";
+  crRender(grouped);
+}
+function crRender(grouped){
+  const adMap=window._crAdMap||{}, ins=window._crIns||[];
+  let groups;
+  if(grouped){
+    const g={};
+    ins.forEach(i=>{ const k=crKey(i.ad_id); (g[k]=g[k]||[]).push(i); });
+    groups=Object.entries(g).map(([key,list])=>{
+      const merged=crMergeRaw(list);
+      const campaigns=[...new Set(list.map(x=>x.campaign_name).filter(Boolean))];
+      const adIds=[...new Set(list.map(x=>x.ad_id))];
+      const repIns=list.slice().sort((a,b)=>(+b.spend||0)-(+a.spend||0))[0];
+      const repAd=adMap[repIns.ad_id];
+      const isVideo=merged.plays>0;
+      const sp=merged.raw.spend;
+      return {id:key,name:repAd?repAd.name:repIns.ad_name,repAd,raw:merged.raw,spend:sp,ctr:merged.raw.ctr,
+        cpa:cpa(sp,merged.raw.actions),
+        r3: merged.raw.impressions>0? actVal(merged.raw.actions,"video_view")/merged.raw.impressions*100 : null,
+        isVideo, p25:merged.p25,p50:merged.p50,p75:merged.p75,p100:merged.p100,plays:merged.plays,
+        campaigns, adCount:adIds.length};
+    });
+  } else {
+    groups=ins.map(i=>{const impr=+i.impressions||0,sp=+i.spend||0;
+      const plays=vvFirst(i.video_play_actions),s3=actVal(i.actions,"video_view");
+      const repAd=adMap[i.ad_id];
+      return {id:i.ad_id,name:i.ad_name,repAd,raw:i,spend:sp,ctr:+i.ctr||0,cpa:cpa(sp,i.actions),
+        r3:impr>0?s3/impr*100:null, isVideo:plays>0,
+        p25:vvFirst(i.video_p25_watched_actions),p50:vvFirst(i.video_p50_watched_actions),p75:vvFirst(i.video_p75_watched_actions),p100:vvFirst(i.video_p100_watched_actions),plays,
+        campaigns:[i.campaign_name].filter(Boolean), adCount:1};});
+  }
+  groups.sort((a,b)=>b.ctr-a.ctr);
+  const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">CTR ${fmtP(r.ctr)} • ${fmtB(r.spend)} • CPA ${r.cpa?fmtB(r.cpa):"—"}</div></div></div>`;};
+  const withData=groups.filter(r=>r.spend>0);
   $("crTop").innerHTML=withData.slice(0,4).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crLose").innerHTML=withData.slice(-4).reverse().map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crBox").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th>${FULL_METRIC_HEAD}<th class="num">3s Play Rate</th><th class="num">Retention P25/50/75/100</th></tr></thead><tbody>`+
-    withData.map(r=>{const a=adMap[r.id];
+    withData.map(r=>{const a=r.repAd;
       const ret=r.isVideo&&r.plays>0? [r.p25,r.p50,r.p75,r.p100].map(x=>Math.round(x/r.plays*100)+"%").join(" / ") : "—";
-      return `<tr><td>${a?thumbHTML(a):""}</td><td data-sort="${esc(r.name)}">${esc(r.name)} ${r.isVideo?'<span class="tag">🎥 Video</span>':'<span class="tag pink">🖼️ Image</span>'}</td>
+      const campTitle=r.campaigns.length? ' title="แคมเปญ: '+esc(r.campaigns.join(", "))+'"' : "";
+      return `<tr><td>${a?thumbHTML(a):""}</td><td data-sort="${esc(r.name)}">${esc(r.name)} ${r.isVideo?'<span class="tag">🎥 Video</span>':'<span class="tag pink">🖼️ Image</span>'}${r.adCount>1?` <span class="tag"${campTitle}>🔗 ${r.adCount} แอด • ${r.campaigns.length} แคมเปญ</span>`:""}</td>
       ${fullMetricCells(r.raw)}
       <td class="num">${r.r3!==null&&r.isVideo?fmtP(r.r3):"—"}</td><td class="num small">${ret}</td></tr>`;}).join("")+`</tbody></table>`;
-};
+}
 
 /* =====================================================================
    12) DAYPARTING — 7×24 heatmap
