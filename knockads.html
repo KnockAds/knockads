@@ -1593,11 +1593,11 @@ function crRender(grouped){
         p25:vvFirst(i.video_p25_watched_actions),p50:vvFirst(i.video_p50_watched_actions),p75:vvFirst(i.video_p75_watched_actions),p100:vvFirst(i.video_p100_watched_actions),plays,
         campaigns:[i.campaign_name].filter(Boolean), adCount:1};});
   }
-  // จัดอันดับ Top/Loser: 1) Purchases  2) Purchase Value  3) ROAS  4) Cost per Message (ยิ่งถูกยิ่งดี)
-  const crScoreCmp=(a,b)=> (b.purchases-a.purchases) || ((b.purchaseValue||0)-(a.purchaseValue||0))
-    || ((b.roas??-1)-(a.roas??-1)) || ((a.costPerMsg??Infinity)-(b.costPerMsg??Infinity));
+  // จัดอันดับ Top/Loser: 1) Purchase Value  2) Purchases  3) Spend  4) Cost per Message (ยิ่งถูกยิ่งดี)
+  const crScoreCmp=(a,b)=> ((b.purchaseValue||0)-(a.purchaseValue||0)) || (b.purchases-a.purchases)
+    || (b.spend-a.spend) || ((a.costPerMsg??Infinity)-(b.costPerMsg??Infinity));
   groups.sort(crScoreCmp);
-  const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">ยอดขาย ${fmtN(r.purchases)} • มูลค่า ${fmtB(r.purchaseValue)} • ROAS ${r.roas!==null?r.roas.toFixed(2)+"x":"—"}</div><div class="muted small">ทักแชท ${fmtN(r.msgCount)} • Cost/ข้อความ ${r.costPerMsg?fmtB(r.costPerMsg):"—"} • CTR ${fmtP(r.ctr)}</div></div></div>`;};
+  const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">ยอดขาย ${fmtN(r.purchases)} • มูลค่า ${fmtB(r.purchaseValue)} • ${fmtB(r.spend)}</div><div class="muted small">ทักแชท ${fmtN(r.msgCount)} • Cost/ข้อความ ${r.costPerMsg?fmtB(r.costPerMsg):"—"} • CTR ${fmtP(r.ctr)}</div></div></div>`;};
   const withData=groups.filter(r=>r.spend>0);
   $("crTop").innerHTML=withData.slice(0,5).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crLose").innerHTML=withData.slice(-5).reverse().map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
