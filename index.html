@@ -1544,7 +1544,7 @@ PAGES.creative = async function(){
     <div class="seg"><button id="crGrpOn" class="active" onclick="crSetGroup(true)">🔗 รวมตาม Post ID</button><button id="crGrpOff" onclick="crSetGroup(false)">แยกตามชิ้นแอด</button></div></div>
     <div class="grid g2">
       <div class="card"><h3>🏆 TOP 5 PERFORMERS</h3><div id="crTop"></div></div>
-      <div class="card"><h3>📉 TOP 5 LOSERS</h3><div id="crLose"></div></div>
+      <div class="card"><h3>📉 TOP 5 LOSERS <span class="muted small">(ไม่มียอดขายเลย • เรียงตาม Spend สูงสุด)</span></h3><div id="crLose"></div></div>
     </div>
     <div class="card mt tablewrap"><h3>🎬 CREATIVE METRICS <span id="crModeLabel" class="muted small">(รวมตาม Post ID — ใช้ Post/ชิ้นงานเดียวกันหลายแคมเปญจะรวมเป็นแถวเดียว)</span></h3><div id="crBox"><span class="spin"></span></div></div>`;
   const range=presetRange(S.preset);
@@ -1600,7 +1600,9 @@ function crRender(grouped){
   const mini=r=>{const a=r.repAd;return `<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(25,20,16,.08)">${a?thumbHTML(a):""}<div style="flex:1"><strong class="small">${esc(r.name)}</strong>${r.adCount>1?` <span class="tag">🔗 ${r.adCount} แอด</span>`:""}<div class="muted small">ยอดขาย ${fmtN(r.purchases)} • มูลค่า ${fmtB(r.purchaseValue)} • ${fmtB(r.spend)}</div><div class="muted small">ทักแชท ${fmtN(r.msgCount)} • Cost/ข้อความ ${r.costPerMsg?fmtB(r.costPerMsg):"—"} • CTR ${fmtP(r.ctr)}</div></div></div>`;};
   const withData=groups.filter(r=>r.spend>0);
   $("crTop").innerHTML=withData.slice(0,5).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
-  $("crLose").innerHTML=withData.slice(-5).reverse().map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
+  // Losers: เฉพาะชิ้นที่ไม่มียอดขายเลย (Purchases=0 และ Purchase Value=0) เรียง Spend มากสุดก่อน
+  const loserPool=withData.filter(r=>r.purchases<=0 && (r.purchaseValue||0)<=0).sort((a,b)=>b.spend-a.spend);
+  $("crLose").innerHTML=loserPool.slice(0,5).map(mini).join("")||'<div class="empty small">ไม่มีข้อมูล</div>';
   $("crBox").innerHTML=`<table><thead><tr><th></th><th>ชิ้นงาน</th>${FULL_METRIC_HEAD}<th class="num">3s Play Rate</th><th class="num">Retention P25/50/75/100</th></tr></thead><tbody>`+
     withData.map(r=>{const a=r.repAd;
       const ret=r.isVideo&&r.plays>0? [r.p25,r.p50,r.p75,r.p100].map(x=>Math.round(x/r.plays*100)+"%").join(" / ") : "—";
